@@ -1269,8 +1269,9 @@ do
                     DisplayLabel.Text = Key;
                     KeyPicker.Value = Key;
 
-                    Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
-                    Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
+                    local EnumKeyboard = Enum.UserInputType.Keyboard
+                    Library:SafeCallback(KeyPicker.ChangedCallback, if (Input.UserInputType == EnumKeyboard) then Input.KeyCode else  Input.UserInputType);
+                    Library:SafeCallback(KeyPicker.Changed, if (Input.UserInputType == EnumKeyboard) then Input.KeyCode else  Input.UserInputType);
 
                     Library:AttemptSave();
 
