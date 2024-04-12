@@ -44,7 +44,6 @@ local Library = {
 
 	Signals = {};
 	ScreenGui = ScreenGui;
-	TextTitle = nil;
 };
 
 local RainbowStep = 0
@@ -66,12 +65,12 @@ table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
 		Library.CurrentRainbowColor = Color3.fromHSV(Hue, 0.8, 1);
 	end
 end))
-local TextBoxFocused = false
+local TextBoxFocused = false;
 InputService.TextBoxFocused:Connect(function()
-	TextBoxFocused = true
+	TextBoxFocused = true;
 end)
 InputService.TextBoxFocusReleased:Connect(function()
-	TextBoxFocused = false
+	TextBoxFocused = false;
 end)
 local function GetPlayersString()
 	local PlayerList = Players:GetPlayers();
@@ -1192,8 +1191,7 @@ do
 
 				local Key = KeyPicker.Value;
 
-				if Key == 'MB1' or Key == 'MB2' then	
-
+				if Key == 'MB1' or Key == 'MB2' then
 					return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
 						or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
 				else
@@ -1213,7 +1211,6 @@ do
 		end;
 
 		function KeyPicker:OnClick(Callback)
-			if TextBoxFocused then return end
 			KeyPicker.Clicked = Callback
 		end
 
@@ -1279,8 +1276,9 @@ do
 					DisplayLabel.Text = Key;
 					KeyPicker.Value = Key;
 
-					Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
-					Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
+					local EnumKeyboard = Enum.UserInputType.Keyboard
+					Library:SafeCallback(KeyPicker.ChangedCallback, if (Input.UserInputType == EnumKeyboard) then Input.KeyCode else Input.UserInputType);
+					Library:SafeCallback(KeyPicker.Changed, if (Input.UserInputType == EnumKeyboard) then Input.KeyCode else Input.UserInputType);
 
 					Library:AttemptSave();
 
@@ -1291,29 +1289,28 @@ do
 			end;
 		end);
 
-		Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
-			if (not Picking) then
-				if not TextBoxFocused then 
-					if KeyPicker.Mode == 'Toggle' then
-						local Key = KeyPicker.Value;
+		Library:GiveSignal(InputService.InputBegan:Connect(function(Input,G)
+			if (not Picking and not G and not TextBoxFocused) then
+				if KeyPicker.Mode == 'Toggle' then
+					local Key = KeyPicker.Value;
 
-						if Key == 'MB1' or Key == 'MB2' then
-							if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
-								or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
-								KeyPicker.Toggled = not KeyPicker.Toggled
-								KeyPicker:DoClick()
-							end;
-						elseif Input.UserInputType == Enum.UserInputType.Keyboard then
-							if Input.KeyCode.Name == Key then
-								KeyPicker.Toggled = not KeyPicker.Toggled;
-								KeyPicker:DoClick()
-							end;
+					if Key == 'MB1' or Key == 'MB2' then
+						if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
+							or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
+							KeyPicker.Toggled = not KeyPicker.Toggled
+							KeyPicker:DoClick()
+						end;
+					elseif Input.UserInputType == Enum.UserInputType.Keyboard then
+						if Input.KeyCode.Name == Key then
+							KeyPicker.Toggled = not KeyPicker.Toggled;
+							KeyPicker:DoClick()
 						end;
 					end;
-
-					KeyPicker:Update();
 				end;
-			end
+
+				KeyPicker:Update();
+			end;
+
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 				local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
 
@@ -1323,11 +1320,10 @@ do
 					ModeSelectOuter.Visible = false;
 				end;
 			end;
-
 		end))
 
-		Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
-			if (not Picking) and not TextBoxFocused then 
+		Library:GiveSignal(InputService.InputEnded:Connect(function(Input,G)
+			if (not Picking and not G and not TextBoxFocused) then
 				KeyPicker:Update();
 			end;
 		end))
@@ -2496,8 +2492,6 @@ do
 			end;
 
 			Dropdown:BuildDropdownList();
-			Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
-			Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
 		end;
 
 		function Dropdown:OpenDropdown()
@@ -3009,7 +3003,7 @@ function Library:CreateWindow(...)
 		ZIndex = 1;
 		Parent = Inner;
 	});
-	Library.TextTitle = WindowLabel;
+
 	local MainSectionOuter = Library:Create('Frame', {
 		BackgroundColor3 = Library.BackgroundColor;
 		BorderColor3 = Library.OutlineColor;
@@ -3646,5 +3640,5 @@ end;
 Players.PlayerAdded:Connect(OnPlayerChange);
 Players.PlayerRemoving:Connect(OnPlayerChange);
 
-getgenv().Library = Library; _G.Library = Library
+getgenv().Library = Library
 return Library
