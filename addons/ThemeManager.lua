@@ -1,3 +1,8 @@
+local args = {...};
+local Toggles,Options = unpack(args);
+
+warn(Toggles,Options);
+
 local httpService = game:GetService('HttpService')
 local ThemeManager = {} do
 	ThemeManager.Folder = 'LinoriaLibSettings'
