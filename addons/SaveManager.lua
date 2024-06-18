@@ -1,5 +1,10 @@
 local httpService = game:GetService('HttpService')
 
+local args = {...};
+local Toggles,Options = unpack(args);
+
+warn(Toggles,Options);
+
 local SaveManager = {} do
 	SaveManager.Folder = 'LinoriaLibSettings'
 	SaveManager.Ignore = {}
