@@ -1,10 +1,5 @@
-local args = {...};
-local Toggles,Options = unpack(args);
-
-warn(Toggles,Options);
-
 local httpService = game:GetService('HttpService')
-local ThemeManager = {} do
+ThemeManager = {} do
 	ThemeManager.Folder = 'LinoriaLibSettings'
 	-- if not isfolder(ThemeManager.Folder) then makefolder(ThemeManager.Folder) end
 
@@ -31,7 +26,7 @@ local ThemeManager = {} do
 		local scheme = data[2]
 		for idx, col in next, customThemeData or scheme do
 			self.Library[idx] = Color3.fromHex(col)
-			
+
 			if Options[idx] then
 				Options[idx]:SetValueRGB(Color3.fromHex(col))
 			end
@@ -66,7 +61,7 @@ local ThemeManager = {} do
 				isDefault = false;
 			end
 		elseif self.BuiltInThemes[self.DefaultTheme] then
-		 	theme = self.DefaultTheme
+			theme = self.DefaultTheme
 		end
 
 		if isDefault then
@@ -110,7 +105,7 @@ local ThemeManager = {} do
 		groupbox:AddInput('ThemeManager_CustomThemeName', { Text = 'Custom theme name' })
 		groupbox:AddDropdown('ThemeManager_CustomThemeList', { Text = 'Custom themes', Values = self:ReloadCustomThemes(), AllowNull = true, Default = 1 })
 		groupbox:AddDivider()
-		
+
 		groupbox:AddButton('Save theme', function() 
 			self:SaveCustomTheme(Options.ThemeManager_CustomThemeName.Value)
 
@@ -153,7 +148,7 @@ local ThemeManager = {} do
 
 		local data = readfile(path)
 		local success, decoded = pcall(httpService.JSONDecode, httpService, data)
-		
+
 		if not success then
 			return nil
 		end
@@ -251,5 +246,4 @@ local ThemeManager = {} do
 
 	ThemeManager:BuildFolderTree()
 end
-
 return ThemeManager
