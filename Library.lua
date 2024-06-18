@@ -392,6 +392,7 @@ function Library:Unload()
 		if (not x) then
 			continue;
 		end
+		print(x);
 		x:Disconnect();
 	end
 
