@@ -1,11 +1,6 @@
 local httpService = game:GetService('HttpService')
 
-local args = {...};
-local Toggles,Options = unpack(args);
-
-warn(Toggles,Options);
-
-local SaveManager = {} do
+SaveManager = {} do
 	SaveManager.Folder = 'LinoriaLibSettings'
 	SaveManager.Ignore = {}
 	SaveManager.Parser = {
@@ -120,7 +115,7 @@ local SaveManager = {} do
 		if (not name) then
 			return false, 'no config file is selected'
 		end
-		
+
 		local file = self.Folder .. '/settings/' .. name .. '.json'
 		if not isfile(file) then return false, 'invalid file' end
 
@@ -181,7 +176,7 @@ local SaveManager = {} do
 				end
 			end
 		end
-		
+
 		return out
 	end
 
@@ -275,5 +270,4 @@ local SaveManager = {} do
 
 	SaveManager:BuildFolderTree()
 end
-
 return SaveManager
