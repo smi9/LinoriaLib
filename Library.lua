@@ -388,8 +388,11 @@ end
 function Library:Unload()
 	-- Unload all of the signals
 	for u,x in pairs(Library.Signals) do
-		x:Disconnect();
 		Library.Signals[u] = nil;
+		if (not x) then
+			continue;
+		end
+		x:Disconnect();
 	end
 
 	-- Call our unload callback, maybe to undo some hooks etc
