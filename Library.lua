@@ -387,9 +387,9 @@ end
 
 function Library:Unload()
 	-- Unload all of the signals
-	for Idx = #Library.Signals, 1, -1 do
-		local Connection = table.remove(Library.Signals, Idx)
-		Connection:Disconnect()
+	for u,x in pairs(Library.Signals) do
+		x:Disconnect();
+		Library.Signals[u] = nil;
 	end
 
 	-- Call our unload callback, maybe to undo some hooks etc
