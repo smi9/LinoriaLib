@@ -2997,7 +2997,7 @@ function Library:CreateWindow(...)
     });
     
     local VersionLabel = Library:CreateLabel({
-        Position = UDim2.new(0, -7, 0, 0);
+        Position = UDim2.new(0, -8, 0, 0);
         Size = UDim2.new(1, 0, 0, 25);
         Text = Config.Version or '';
         RichText = true;
