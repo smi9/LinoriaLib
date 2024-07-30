@@ -189,11 +189,12 @@ local SaveManager = {} do
 			local name = readfile(self.Folder .. '/settings/autoload.txt')
 
 			local success, err = self:Load(name)
-			if not success then
+			if not success and not SILENT then
 				return self.Library:Notify('Failed to load autoload config: ' .. err)
 			end
-
-			self.Library:Notify(string.format('Auto loaded config %q', name))
+			if not SILENT then
+				self.Library:Notify(string.format('Auto loaded config %q', name))
+			end
 		end
 	end
 
