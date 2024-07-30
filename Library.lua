@@ -1281,8 +1281,8 @@ do
             end;
         end);
 
-        Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
-            if (not Picking) then
+        Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
+            if (not Picking and not Processed) then
                 if KeyPicker.Mode == 'Toggle' then
                     local Key = KeyPicker.Value;
 
