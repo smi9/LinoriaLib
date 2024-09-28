@@ -998,7 +998,10 @@ do
 		Options[Idx] = ColorPicker;
 
 		if (self.ToggleRegion) then
-			self.ToggleRegion.Size -= UDim2.new(0,32,0,0)
+			self.ColorPickerCount += 1;
+			if (self.ColorPickerCount > 2) then
+				self.ToggleRegion.Size -= UDim2.new(0,32,0,0);
+			end
 		end
 		return self;
 	end;
@@ -1944,6 +1947,7 @@ do
 		Groupbox:AddBlank(Info.BlankSize or 5 + 2);
 		Groupbox:Resize();
 		
+		Toggle.ColorPickerCount = 0;
 		Toggle.ToggleRegion = ToggleRegion;
 		Toggle.TextLabel = ToggleLabel;
 		Toggle.Container = Container;
