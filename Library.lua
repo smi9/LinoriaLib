@@ -1000,7 +1000,6 @@ do
 		if (self.ToggleRegion) then
 			self.ColorPickerCount += 1;
 			if (self.ColorPickerCount > 2) then
-				print("no...");
 				self.ToggleRegion.Size -= UDim2.new(0,32,0,0);
 			end
 		end
