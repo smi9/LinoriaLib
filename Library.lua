@@ -1000,6 +1000,7 @@ do
 		if (self.ToggleRegion) then
 			self.ColorPickerCount += 1;
 			if (self.ColorPickerCount > 2) then
+				print("no...");
 				self.ToggleRegion.Size -= UDim2.new(0,32,0,0);
 			end
 		end
@@ -2173,6 +2174,7 @@ do
 		end;
 
 		local Dropdown = {
+			Illegal = Info.Illegal;
 			Values = Info.Values;
 			Value = Info.Multi and {};
 			Multi = Info.Multi;
@@ -2516,7 +2518,7 @@ do
 				local nTable = {};
 
 				for Value, Bool in next, Val do
-					if table.find(Dropdown.Values, Value) then
+					if Dropdown.Illegal or table.find(Dropdown.Values, Value) then
 						nTable[Value] = true
 					end;
 				end;
@@ -2525,7 +2527,7 @@ do
 			else
 				if (not Val) then
 					Dropdown.Value = nil;
-				elseif table.find(Dropdown.Values, Val) then
+				elseif Dropdown.Illegal or table.find(Dropdown.Values, Val) then
 					Dropdown.Value = Val;
 				end;
 			end;
