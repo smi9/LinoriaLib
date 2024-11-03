@@ -1946,7 +1946,7 @@ do
 		Toggle:Display();
 		Groupbox:AddBlank(Info.BlankSize or 5 + 2);
 		Groupbox:Resize();
-		
+
 		Toggle.ColorPickerCount = 0;
 		Toggle.ToggleRegion = ToggleRegion;
 		Toggle.TextLabel = ToggleLabel;
@@ -1960,29 +1960,30 @@ do
 		return Toggle;
 	end;
 
-	function Funcs:AddSlider(Idx, Info)
+	function Funcs:AddSlider(Idx, Info, SliderParent)
 		assert(Info.Default, 'AddSlider: Missing default value.');
 		assert(Info.Text, 'AddSlider: Missing slider text.');
 		assert(Info.Min, 'AddSlider: Missing minimum value.');
 		assert(Info.Max, 'AddSlider: Missing maximum value.');
 		assert(Info.Rounding, 'AddSlider: Missing rounding value.');
-
+		
 		local Slider = {
 			Value = Info.Default;
 			Min = Info.Min;
 			Max = Info.Max;
 			Rounding = Info.Rounding;
-			MaxSize = 232;
+			MaxSize = SliderParent and 232/2 - 3 or 232;
 			Type = 'Slider';
 			Callback = Info.Callback or function(Value) end;
 		};
 
 		local Groupbox = self;
-		local Container = Groupbox.Container;
+		local Container = SliderParent or Groupbox.Container;
 
 		if not Info.Compact then
 			Library:CreateLabel({
 				Size = UDim2.new(1, 0, 0, 10);
+				Position = SliderParent and UDim2.new(1,4,0,-12) or UDim2.new();
 				TextSize = 14;
 				Text = Info.Text;
 				TextXAlignment = Enum.TextXAlignment.Left;
@@ -1997,10 +1998,17 @@ do
 		local SliderOuter = Library:Create('Frame', {
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BorderColor3 = Color3.new(0, 0, 0);
-			Size = UDim2.new(1, -4, 0, 13);
+			--Position = UDim2.fromScale(Groupbox.SliderParent and .5 or 0,0);
 			ZIndex = 5;
 			Parent = Container;
 		});
+		if (SliderParent) then
+			SliderParent.Size = UDim2.new(.5, -2, 0, 13);
+			SliderOuter.Position = UDim2.new(1, 3, 0, 0);
+			SliderOuter.Size = UDim2.new(1, -2, 0, 13);
+		else
+			SliderOuter.Size = UDim2.new(1, -4, 0, 13);
+		end;
 
 		Library:AddToRegistry(SliderOuter, {
 			BorderColor3 = 'Black';
@@ -2118,6 +2126,14 @@ do
 			Library:SafeCallback(Slider.Callback, Slider.Value);
 			Library:SafeCallback(Slider.Changed, Slider.Value);
 		end;
+		
+		if (not SliderParent) then
+			function Slider:AddSlider(idx, info)
+				Slider.MaxSize = 232/2 - 1;
+				Groupbox.SliderParent = SliderOuter;
+				return Funcs.AddSlider(Groupbox, idx, info, SliderOuter);
+			end;
+		end;
 
 		SliderInner.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
@@ -2148,8 +2164,11 @@ do
 		end);
 
 		Slider:Display();
-		Groupbox:AddBlank(Info.BlankSize or 6);
-		Groupbox:Resize();
+		
+		if (not SliderParent) then
+			Groupbox:AddBlank(Info.BlankSize or 6);
+			Groupbox:Resize();
+		end;
 
 		Options[Idx] = Slider;
 
