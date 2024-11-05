@@ -2131,6 +2131,7 @@ do
 			function Slider:AddSlider(idx, info)
 				Slider.MaxSize = 232/2 - 1;
 				Groupbox.SliderParent = SliderOuter;
+				Slider:Display();
 				return Funcs.AddSlider(Groupbox, idx, info, SliderOuter);
 			end;
 		end;
