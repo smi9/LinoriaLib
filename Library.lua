@@ -1372,7 +1372,7 @@ do
 			ZIndex = 5;
 			Parent = Container;
 		});
-		
+
 		if DoesWrap then
 			local Y = select(2, Library:GetTextBounds(Text, Library.Font, 14, Vector2.new(TextLabel.AbsoluteSize.X, math.huge)))
 			TextLabel.Size = UDim2.new(1, -4, 0, Y)
@@ -1967,19 +1967,21 @@ do
 		assert(Info.Min, 'AddSlider: Missing minimum value.');
 		assert(Info.Max, 'AddSlider: Missing maximum value.');
 		assert(Info.Rounding, 'AddSlider: Missing rounding value.');
-		
+
 		local Slider = {
 			Value = Info.Default;
 			Min = Info.Min;
 			Max = Info.Max;
 			Rounding = Info.Rounding;
-			MaxSize = SliderParent and 232/2 - 3 or 232;
+			MaxSize = 232;--SliderParent and 232/2 - 3 or 232;
 			Type = 'Slider';
 			Callback = Info.Callback or function(Value) end;
 		};
 
+		Slider.Parent = SliderParent;
+
 		local Groupbox = self;
-		local Container = SliderParent or Groupbox.Container;
+		local Container = SliderParent and SliderParent.Outer or Groupbox.Container;
 
 		if not Info.Compact then
 			Library:CreateLabel({
@@ -1994,23 +1996,19 @@ do
 			});
 
 			Groupbox:AddBlank(3);
-		end
+		end;
 
 		local SliderOuter = Library:Create('Frame', {
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BorderColor3 = Color3.new(0, 0, 0);
 			--Position = UDim2.fromScale(Groupbox.SliderParent and .5 or 0,0);
+			Size = UDim2.new(1,0,0,13);
 			ZIndex = 5;
 			Parent = Container;
 		});
-		if (SliderParent) then
-			SliderParent.Size = UDim2.new(.5, -2, 0, 13);
-			SliderOuter.Position = UDim2.new(1, 3, 0, 0);
-			SliderOuter.Size = UDim2.new(1, -2, 0, 13);
-		else
-			SliderOuter.Size = UDim2.new(1, -4, 0, 13);
-		end;
-
+		
+		Slider.Outer = SliderOuter;
+		
 		Library:AddToRegistry(SliderOuter, {
 			BorderColor3 = 'Black';
 		});
@@ -2072,6 +2070,17 @@ do
 			Library:AddToolTip(Info.Tooltip, SliderOuter)
 		end
 
+		local get_count = function()
+			local parent, count = Slider, 1;
+			repeat
+				parent = parent.Parent or nil;
+				if (parent) then
+					count += 1;
+				end
+			until not parent;
+			return count;
+		end;
+
 		function Slider:UpdateColors()
 			Fill.BackgroundColor3 = Library.AccentColor;
 			Fill.BorderColor3 = Library.AccentColorDark;
@@ -2127,15 +2136,13 @@ do
 			Library:SafeCallback(Slider.Callback, Slider.Value);
 			Library:SafeCallback(Slider.Changed, Slider.Value);
 		end;
-		
-		if (not SliderParent) then
+
+		if (get_count() < 3) then
 			function Slider:AddSlider(idx, info)
-				Slider.MaxSize = 232/2 - 1;
-				Groupbox.SliderParent = SliderOuter;
 				Slider:Display();
-				return Funcs.AddSlider(Groupbox, idx, info, SliderOuter);
+				return Funcs.AddSlider(Groupbox, idx, info, Slider);
 			end;
-		end;
+		end
 
 		SliderInner.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
@@ -2167,11 +2174,42 @@ do
 
 		Slider:Display();
 		
+		local size = get_count();
+		local get_slider = function(count)
+			local slider = Slider;
+			for i=1,count-1 do
+				slider = slider.Parent;
+			end;
+			return slider;
+		end;
+
+		local wanted_size = (Groupbox.Container.AbsoluteSize.X) / size;
+		wanted_size += size - 2;
+		
+		local n_size = math.round(wanted_size);
+		
+		for i = size, 1, -1 do
+			local slider = get_slider(i);
+			slider.Outer.Size = UDim2.new(0, n_size - 3, 0, 13)
+			slider.Outer.Position = UDim2.new(1, 2, 0, 0);
+			slider.MaxSize = slider.Outer.AbsoluteSize.X - 2;
+
+			slider:Display();
+		end;
+		
+		if (n_size ~= wanted_size) then -- jank fix..
+			local slider = get_slider(1);
+			slider.Outer.Size = UDim2.new(0, n_size - (size + 1), 0, 13)
+			slider.Outer.Position = UDim2.new(1, 2, 0, 0);
+			slider.MaxSize = slider.Outer.AbsoluteSize.X - 2;
+			
+			slider:Display();
+		end;
+		
 		if (not SliderParent) then
 			Groupbox:AddBlank(Info.BlankSize or 6);
 			Groupbox:Resize();
 		end;
-
 		Options[Idx] = Slider;
 
 		return Slider;
