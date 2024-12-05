@@ -1721,7 +1721,8 @@ do
 			Font = Library.Font;
 			PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
 			PlaceholderText = Info.Placeholder or '';
-
+			
+			ClearTextOnFocus = Info.Clear or false;
 			Text = Info.Default or '';
 			TextColor3 = Library.FontColor;
 			TextSize = 14;
@@ -2006,9 +2007,9 @@ do
 			ZIndex = 5;
 			Parent = Container;
 		});
-		
+
 		Slider.Outer = SliderOuter;
-		
+
 		Library:AddToRegistry(SliderOuter, {
 			BorderColor3 = 'Black';
 		});
@@ -2173,7 +2174,7 @@ do
 		end);
 
 		Slider:Display();
-		
+
 		local size = get_count();
 		local get_slider = function(count)
 			local slider = Slider;
@@ -2185,9 +2186,9 @@ do
 
 		local wanted_size = (Groupbox.Container.AbsoluteSize.X) / size;
 		wanted_size += size - 2;
-		
+
 		local n_size = math.round(wanted_size);
-		
+
 		for i = size, 1, -1 do
 			local slider = get_slider(i);
 			slider.Outer.Size = UDim2.new(0, n_size - 3, 0, 13)
@@ -2196,16 +2197,16 @@ do
 
 			slider:Display();
 		end;
-		
+
 		if (n_size ~= wanted_size) then -- jank fix..
 			local slider = get_slider(1);
 			slider.Outer.Size = UDim2.new(0, n_size - (size + 1), 0, 13)
 			slider.Outer.Position = UDim2.new(1, 2, 0, 0);
 			slider.MaxSize = slider.Outer.AbsoluteSize.X - 2;
-			
+
 			slider:Display();
 		end;
-		
+
 		if (not SliderParent) then
 			Groupbox:AddBlank(Info.BlankSize or 6);
 			Groupbox:Resize();
