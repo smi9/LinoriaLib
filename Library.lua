@@ -1191,10 +1191,10 @@ do
 				local Key = KeyPicker.Value;
 
 				if Key == 'MB1' or Key == 'MB2' then
-					return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-						or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
+					return Key == 'MB1' and InputService.IsMouseButtonPressed(InputService, Enum.UserInputType.MouseButton1)
+						or Key == 'MB2' and InputService.IsMouseButtonPressed(InputService, Enum.UserInputType.MouseButton2);
 				else
-					return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
+					return InputService.IsKeyDown(InputService, Enum.KeyCode[KeyPicker.Value]);
 				end;
 			else
 				return KeyPicker.Toggled;
@@ -1721,7 +1721,7 @@ do
 			Font = Library.Font;
 			PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
 			PlaceholderText = Info.Placeholder or '';
-			
+
 			ClearTextOnFocus = Info.Clear or false;
 			Text = Info.Default or '';
 			TextColor3 = Library.FontColor;
