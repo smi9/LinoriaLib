@@ -3063,6 +3063,7 @@ function Library:CreateWindow(...)
 		TextXAlignment = Enum.TextXAlignment.Center;
 		ZIndex = 1;
 		Parent = Inner;
+		RichText = true;
 	});
 
 	local VersionLabel = Library:CreateLabel({
