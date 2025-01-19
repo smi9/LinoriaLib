@@ -42,6 +42,14 @@ local Library = {
 	OpenedFrames = {};
 	DependencyBoxes = {};
 
+	KeypickerListMode = "All"; --[[
+		{
+			"Active",
+			"Toggled",
+			"All"
+		};
+	]]
+
 	Signals = {};
 	ScreenGui = ScreenGui;
 };
@@ -1020,8 +1028,9 @@ do
 			Type = 'KeyPicker';
 			Callback = Info.Callback or function(Value) end;
 			ChangedCallback = Info.ChangedCallback or function(New) end;
-			NoUI = Info.NoUI;
+			NoUI = Info.NoUI;--Info.NoUI;
 			SyncToggleState = Info.SyncToggleState or false;
+			Parent = ParentObj;
 		};
 
 		if KeyPicker.SyncToggleState then
@@ -1150,21 +1159,30 @@ do
 
 			ModeButtons[Mode] = ModeButton;
 		end;
-
-		function KeyPicker:Update()
-			if KeyPicker.NoUI then
-				ContainerLabel.Visible = false;
-				return;
-			end;
-
-			local State = KeyPicker:GetState();
-
+		
+		local update = function(State)
 			ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
 
 			ContainerLabel.Visible = true;
 			ContainerLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
 
 			Library.RegistryMap[ContainerLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
+		end;
+		
+		function KeyPicker:Update()
+			if not KeyPicker.NoUI then
+				local mode = Library.KeypickerListMode;
+				local State = KeyPicker:GetState();
+				if (mode == "Active" and KeyPicker.Parent.Type == "Toggle" and (not State or not KeyPicker.Parent.Value)) then
+					ContainerLabel.Visible = false;
+				elseif (mode == "Toggled" and KeyPicker.Parent.Type == "Toggle" and not KeyPicker.Parent.Value) then
+					ContainerLabel.Visible = false;
+				else
+					update(State);
+				end;
+			else
+				ContainerLabel.Visible = false;
+			end;
 
 			local YSize = 0
 			local XSize = 0
@@ -1179,6 +1197,8 @@ do
 			end;
 
 			Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 210), 0, YSize + 23)
+			
+			Library.KeybindFrame.Visible = (YSize ~= 0);
 		end;
 
 		function KeyPicker:GetState()
@@ -1926,7 +1946,6 @@ do
 					if (Addon.SyncToggleState) then
 						Addon.Toggled = Bool
 					end;
-
 					Addon.NoUI = not Bool;
 					Addon:Update()
 				end
