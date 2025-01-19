@@ -7,7 +7,7 @@ local RunService = game:GetService('RunService')
 local TweenService = game:GetService('TweenService');
 local RenderStepped = RunService.RenderStepped;
 local LocalPlayer = Players.LocalPlayer;
-local Mouse = cloneref(LocalPlayer:GetMouse());
+local Mouse = LocalPlayer:GetMouse();
 
 local ProtectGui = protectgui or (syn and syn.protect_gui) or (function() end);
 
@@ -1020,7 +1020,7 @@ do
 			Type = 'KeyPicker';
 			Callback = Info.Callback or function(Value) end;
 			ChangedCallback = Info.ChangedCallback or function(New) end;
-
+			NoUI = Info.NoUI;
 			SyncToggleState = Info.SyncToggleState or false;
 		};
 
@@ -1152,7 +1152,8 @@ do
 		end;
 
 		function KeyPicker:Update()
-			if Info.NoUI then
+			if KeyPicker.NoUI then
+				ContainerLabel.Visible = false;
 				return;
 			end;
 
@@ -1267,6 +1268,8 @@ do
 						Key = 'MB1';
 					elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
 						Key = 'MB2';
+					elseif (Input.KeyCode == Enum.KeyCode.Escape) then
+						Key = "None";
 					end;
 
 					Break = true;
@@ -1921,8 +1924,12 @@ do
 			Toggle:Display();
 
 			for _, Addon in next, Toggle.Addons do
-				if Addon.Type == 'KeyPicker' and Addon.SyncToggleState then
-					Addon.Toggled = Bool
+				if Addon.Type == 'KeyPicker' then
+					if (Addon.SyncToggleState) then
+						Addon.Toggled = Bool
+					end;
+					
+					Addon.NoUI = not Bool;
 					Addon:Update()
 				end
 			end
@@ -3063,7 +3070,6 @@ function Library:CreateWindow(...)
 		TextXAlignment = Enum.TextXAlignment.Center;
 		ZIndex = 1;
 		Parent = Inner;
-		RichText = true;
 	});
 
 	local VersionLabel = Library:CreateLabel({
