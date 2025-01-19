@@ -1263,13 +1263,11 @@ do
 					local Key;
 
 					if Input.UserInputType == Enum.UserInputType.Keyboard then
-						Key = Input.KeyCode.Name;
+						Key = Input.KeyCode == Enum.KeyCode.Escape and "..." or Input.KeyCode.Name;
 					elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
 						Key = 'MB1';
 					elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
 						Key = 'MB2';
-					elseif (Input.KeyCode == Enum.KeyCode.Escape) then
-						Key = "None";
 					end;
 
 					Break = true;
@@ -1928,7 +1926,7 @@ do
 					if (Addon.SyncToggleState) then
 						Addon.Toggled = Bool
 					end;
-					
+
 					Addon.NoUI = not Bool;
 					Addon:Update()
 				end
