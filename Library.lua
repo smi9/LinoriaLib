@@ -1174,8 +1174,6 @@ do
 				local mode = Library.KeypickerListMode;
 				local State = KeyPicker:GetState();
 				
-				warn(mode, Info.Text);
-				
 				if (mode == "Active" and KeyPicker.Parent.Type == "Toggle" and (not State or not KeyPicker.Parent.Value)) then
 					ContainerLabel.Visible = false;
 				elseif (mode == "Toggled" and KeyPicker.Parent.Type == "Toggle" and not KeyPicker.Parent.Value) then
