@@ -1173,6 +1173,9 @@ do
 			if not KeyPicker.NoUI then
 				local mode = Library.KeypickerListMode;
 				local State = KeyPicker:GetState();
+				
+				warn(mode, Info.Text);
+				
 				if (mode == "Active" and KeyPicker.Parent.Type == "Toggle" and (not State or not KeyPicker.Parent.Value)) then
 					ContainerLabel.Visible = false;
 				elseif (mode == "Toggled" and KeyPicker.Parent.Type == "Toggle" and not KeyPicker.Parent.Value) then
@@ -1946,7 +1949,6 @@ do
 					if (Addon.SyncToggleState) then
 						Addon.Toggled = Bool
 					end;
-					Addon.NoUI = not Bool;
 					Addon:Update()
 				end
 			end
