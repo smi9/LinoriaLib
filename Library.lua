@@ -3364,7 +3364,7 @@ function Library:CreateWindow(...)
 
 				BoxOuter.Size = UDim2.new(1, 0, 0, 20 + Size + 2 + 2);
 			end;
-			
+
 			local Groupboxes = Tab.Groupboxes;
 			function Groupbox:Remove()
 				table.clear(self);
@@ -3450,7 +3450,7 @@ function Library:CreateWindow(...)
 				SortOrder = Enum.SortOrder.LayoutOrder;
 				Parent = TabboxButtons;
 			});
-			
+
 			local Tabboxes = Tab.Tabboxes;
 			function Tabbox:Remove()
 				BoxOuter:Destroy();
@@ -3596,14 +3596,14 @@ function Library:CreateWindow(...)
 		function Tab:AddRightTabbox(Name)
 			return self:AddTabbox({ Name = Name, Side = 2; });
 		end;
-		
+
 		function Tab:Remove()
 			table.clear(Tab);
 			TabFrame:Destroy();
 			TabButton:Destroy();
 			Window.Tabs[Name] = nil;
 		end;
-		
+
 		TabButton.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 				Tab:ShowTab();
