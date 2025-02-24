@@ -41,7 +41,7 @@ local Library = {
 
 	OpenedFrames = {};
 	DependencyBoxes = {};
-	
+
 	KeypickerListVisible = true;
 	KeypickerListMode = "All"; --[[
 		{
@@ -1160,7 +1160,7 @@ do
 
 			ModeButtons[Mode] = ModeButton;
 		end;
-		
+
 		local update = function(State)
 			ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
 
@@ -1169,12 +1169,12 @@ do
 
 			Library.RegistryMap[ContainerLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
 		end;
-		
+
 		function KeyPicker:Update()
 			if not KeyPicker.NoUI then
 				local mode = Library.KeypickerListMode;
 				local State = KeyPicker:GetState();
-				
+
 				if (mode == "Active" and KeyPicker.Parent.Type == "Toggle" and (not State or not KeyPicker.Parent.Value)) then
 					ContainerLabel.Visible = false;
 				elseif (mode == "Toggled" and KeyPicker.Parent.Type == "Toggle" and not KeyPicker.Parent.Value) then
@@ -1199,7 +1199,7 @@ do
 			end;
 
 			Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 210), 0, YSize + 23)
-			
+
 			Library.KeybindFrame.Visible = Library.KeypickerListVisible and (YSize ~= 0);
 		end;
 
@@ -3364,6 +3364,13 @@ function Library:CreateWindow(...)
 
 				BoxOuter.Size = UDim2.new(1, 0, 0, 20 + Size + 2 + 2);
 			end;
+			
+			local Groupboxes = Tab.Groupboxes;
+			function Groupbox:Remove()
+				table.clear(self);
+				BoxOuter:Destroy();
+				Groupboxes[Info.Name] = nil;
+			end;
 
 			Groupbox.Container = Container;
 			setmetatable(Groupbox, BaseGroupbox);
@@ -3371,17 +3378,17 @@ function Library:CreateWindow(...)
 			Groupbox:AddBlank(3);
 			Groupbox:Resize();
 
-			Tab.Groupboxes[Info.Name] = Groupbox;
+			Groupboxes[Info.Name] = Groupbox;
 
 			return Groupbox;
 		end;
 
 		function Tab:AddLeftGroupbox(Name)
-			return Tab:AddGroupbox({ Side = 1; Name = Name; });
+			return self:AddGroupbox({ Side = 1; Name = Name; });
 		end;
 
 		function Tab:AddRightGroupbox(Name)
-			return Tab:AddGroupbox({ Side = 2; Name = Name; });
+			return self:AddGroupbox({ Side = 2; Name = Name; });
 		end;
 
 		function Tab:AddTabbox(Info)
@@ -3443,6 +3450,13 @@ function Library:CreateWindow(...)
 				SortOrder = Enum.SortOrder.LayoutOrder;
 				Parent = TabboxButtons;
 			});
+			
+			local Tabboxes = Tab.Tabboxes;
+			function Tabbox:Remove()
+				BoxOuter:Destroy();
+				table.clear(Tabbox);
+				Tabboxes[Info.Name or ''] = nil;
+			end;
 
 			function Tabbox:AddTab(Name)
 				local Tab = {};
@@ -3570,19 +3584,26 @@ function Library:CreateWindow(...)
 				return Tab;
 			end;
 
-			Tab.Tabboxes[Info.Name or ''] = Tabbox;
+			Tabboxes[Info.Name or ''] = Tabbox;
 
 			return Tabbox;
 		end;
 
 		function Tab:AddLeftTabbox(Name)
-			return Tab:AddTabbox({ Name = Name, Side = 1; });
+			return self:AddTabbox({ Name = Name, Side = 1; });
 		end;
 
 		function Tab:AddRightTabbox(Name)
-			return Tab:AddTabbox({ Name = Name, Side = 2; });
+			return self:AddTabbox({ Name = Name, Side = 2; });
 		end;
-
+		
+		function Tab:Remove()
+			table.clear(Tab);
+			TabFrame:Destroy();
+			TabButton:Destroy();
+			Window.Tabs[Name] = nil;
+		end;
+		
 		TabButton.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 				Tab:ShowTab();
