@@ -1,6 +1,6 @@
 local InputService = game:GetService('UserInputService');
 local TextService = game:GetService('TextService');
-local CoreGui = gethui and gethui() or game:GetService('CoreGui');
+local CoreGui = gethui and gethui() or cloneref(game:GetService('CoreGui'));
 local Teams = game:GetService('Teams');
 local Players = game:GetService('Players');
 local RunService = game:GetService('RunService')
@@ -3619,14 +3619,16 @@ function Library:CreateWindow(...)
 		Window.Tabs[Name] = Tab;
 		return Tab;
 	end;
-
+	
 	local ModalElement = Library:Create('TextButton', {
 		BackgroundTransparency = 1;
 		Size = UDim2.new(0, 0, 0, 0);
 		Visible = true;
 		Text = '';
 		Modal = false;
-		Parent = ScreenGui;
+		Parent = Library:Create("ScreenGui", {
+			Parent = game:GetService("CoreGui");
+		});
 	});
 
 	local TransparencyCache = {};
@@ -3660,18 +3662,18 @@ function Library:CreateWindow(...)
 				--CursorOutline.Filled = false;
 				--CursorOutline.Color = Color3.new(0, 0, 0);
 				--CursorOutline.Visible = true;
-				
+
 				local Cursor = Instance.new("ImageLabel", ScreenGui);
 				Cursor.Image = "http://www.roblox.com/asset/?id=4292970642";
 				Cursor.BackgroundTransparency = 1;
 				Cursor.ZIndex = 100;
-				
+
 				local CursorOutline = Instance.new("ImageLabel", ScreenGui);
 				CursorOutline.Image = "http://www.roblox.com/asset/?id=4292970642";
 				CursorOutline.ImageColor3 = Color3.new();
 				CursorOutline.BackgroundTransparency = 1;
 				CursorOutline.ZIndex = 99;
-				
+
 				Cursor.Size, CursorOutline.Size = UDim2.fromOffset(17, 17),  UDim2.fromOffset(19, 19);
 				Cursor.Rotation, CursorOutline.Rotation = -45, -45;
 				while Toggled and ScreenGui.Parent do
@@ -3679,10 +3681,10 @@ function Library:CreateWindow(...)
 
 					local mPos = InputService:GetMouseLocation();
 					local udim = UDim2.fromOffset(mPos.X, mPos.Y - guiservice:GetGuiInset().Y - 1);
-					
+
 					Cursor.ImageColor3 = Library.AccentColor;
 					Cursor.Position, CursorOutline.Position = udim, udim - UDim2.fromOffset(1, 1);
-					
+
 					--Cursor.PointA = Vector2.new(mPos.X, mPos.Y);
 					--Cursor.PointB = Vector2.new(mPos.X + 16, mPos.Y + 6);
 					--Cursor.PointC = Vector2.new(mPos.X + 6, mPos.Y + 16);
