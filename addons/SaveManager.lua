@@ -40,7 +40,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if Options[idx] then 
-					Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency)
+					Options[idx]:SetValueRGB(Color3.fromHex(data.value), Options[idx].HasTransparency and data.transparency or 0)
 				end
 			end,
 		},
@@ -271,5 +271,5 @@ local SaveManager = {} do
 
 	SaveManager:BuildFolderTree()
 end
-
+getgenv().SaveManager = SaveManager;
 return SaveManager
