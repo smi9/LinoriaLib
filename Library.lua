@@ -430,6 +430,7 @@ do
 			Transparency = Info.Transparency or 0;
 			Type = 'ColorPicker';
 			Title = type(Info.Title) == 'string' and Info.Title or 'Color picker',
+			HasTransparency = not not Info.Transparency;
 			Callback = Info.Callback or function(Color) end;
 		};
 
@@ -3619,7 +3620,7 @@ function Library:CreateWindow(...)
 		Window.Tabs[Name] = Tab;
 		return Tab;
 	end;
-	
+
 	local ModalElement = Library:Create('TextButton', {
 		BackgroundTransparency = 1;
 		Size = UDim2.new(0, 0, 0, 0);
