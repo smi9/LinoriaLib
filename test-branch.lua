@@ -484,6 +484,7 @@ do
 			Title = type(Info.Title) == 'string' and Info.Title or 'Color picker',
 			HasTransparency = not not Info.Transparency;
 			Callback = Info.Callback or function(Color) end;
+			Idx = Idx;
 		};
 
 		function ColorPicker:SetHSVFromRGB(Color)
@@ -1092,6 +1093,7 @@ do
 			SyncToggleState = Info.SyncToggleState or false;
 			Parent = ParentObj;
 			Connections = { };
+			Idx = Idx;
 		};
 
 		if KeyPicker.SyncToggleState then
@@ -1768,6 +1770,7 @@ do
 			Finished = Info.Finished or false;
 			Type = 'Input';
 			Callback = Info.Callback or function(Value) end;
+			Idx = Idx;
 		};
 
 		local Groupbox = self;
@@ -1966,6 +1969,7 @@ do
 			Callback = Info.Callback or function(Value) end;
 			Addons = {},
 			Risky = Info.Risky,
+			Idx = Idx;
 		};
 
 		local Groupbox = self;
@@ -2124,6 +2128,7 @@ do
 			MaxSize = 232;--SliderParent and 232/2 - 3 or 232;
 			Type = 'Slider';
 			Callback = Info.Callback or function(Value) end;
+			Idx = Idx;
 		};
 
 		Slider.Parent = SliderParent;
@@ -2398,6 +2403,7 @@ do
 			Type = 'Dropdown';
 			SpecialType = Info.SpecialType; -- can be either 'Player' or 'Team'
 			Callback = Info.Callback or function(Value) end;
+			Idx = Idx;
 		};
 
 		local Groupbox = self;
