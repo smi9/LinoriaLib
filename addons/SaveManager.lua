@@ -252,11 +252,21 @@ local SaveManager = {} do
 			Options.SaveManager_ConfigList:SetValue(nil)
 		end)
 
-		section:AddButton('Set as autoload', function()
+		section:AddButton('set autoload', function()
 			local name = Options.SaveManager_ConfigList.Value
+			if (not name) then
+				return;
+			end;
 			writefile(self.Folder .. '/settings/autoload.txt', name)
 			SaveManager.AutoloadLabel:SetText('Current autoload config: ' .. name)
 			self.Library:Notify(string.format('Set %q to auto load', name))
+		end):AddButton('remove autoload', function()
+			local name = Options.SaveManager_ConfigList.Value
+			if (isfile(self.Folder .. '/settings/autoload.txt')) then
+				delfile(self.Folder .. '/settings/autoload.txt');
+			end;
+			SaveManager.AutoloadLabel:SetText('Current autoload config: none')
+			self.Library:Notify("removed autoload");
 		end)
 
 		SaveManager.AutoloadLabel = section:AddLabel('Current autoload config: none', true)
