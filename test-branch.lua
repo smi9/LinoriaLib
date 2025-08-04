@@ -42,12 +42,12 @@ local Library = {
 
 	OpenedFrames = {};
 	DependencyBoxes = {};
-	
+
 	NotificationStyle = {
 		Transparency = 0;
 		BarSide = "Left"; -- { "Left", "Right", "Bottom", "Top" };
 	};
-	
+
 	KeypickerListVisible = true;
 	KeypickerListMode = "All"; --[[
 		{
@@ -460,6 +460,152 @@ function Library:OnUnload(Callback)
 	Library.OnUnload = Callback
 end
 
+local _callbacks = { };
+function Library:BindToInput(key, callback) -- adding so there isnt 869 quintillion connections
+	_callbacks[key] = _callbacks[key] or { };
+	table.insert(_callbacks[key], callback);
+end;
+
+Library:GiveSignal(InputService.InputBegan:Connect(function(input, ...)
+	local callbacks = _callbacks[input.KeyCode] or _callbacks[input.UserInputType];
+	if (callbacks) then
+		for _, callback in callbacks do
+			task.spawn(callback, input, ...);
+		end;
+	end;
+end));
+
+function Library:AddContextMenu(DisplayFrame, hitbox)
+	local ContextMenu = { Visible = false; }
+	ContextMenu.Options = {}
+	ContextMenu.Container = Library:Create('Frame', {
+		BorderColor3 = Color3.new(),
+		ZIndex = 14,
+
+		Visible = false,
+		Parent = ScreenGui
+	})
+
+	ContextMenu.Inner = Library:Create('Frame', {
+		BackgroundColor3 = Library.BackgroundColor;
+		BorderColor3 = Library.OutlineColor;
+		BorderMode = Enum.BorderMode.Inset;
+		Size = UDim2.fromScale(1, 1);
+		ZIndex = 15;
+		Parent = ContextMenu.Container;
+	});
+
+	Library:Create('UIListLayout', {
+		Name = 'Layout',
+		HorizontalAlignment = Enum.HorizontalAlignment.Left;
+		FillDirection = Enum.FillDirection.Vertical;
+		SortOrder = Enum.SortOrder.LayoutOrder;
+		Parent = ContextMenu.Inner;
+	});
+
+	Library:Create('UIPadding', {
+		Name = 'Padding',
+		PaddingLeft = UDim.new(0, 0),
+		Parent = ContextMenu.Inner,
+	});
+
+	local function updateMenuPosition()
+		ContextMenu.Container.Position = UDim2.fromOffset(
+			(DisplayFrame.AbsolutePosition.X + DisplayFrame.AbsoluteSize.X) + 4,
+			DisplayFrame.AbsolutePosition.Y + 1
+		)
+	end
+
+	local function updateMenuSize()
+		local menuWidth = 60
+		for i, label in next, ContextMenu.Inner:GetChildren() do
+			if label:IsA('TextLabel') then
+				menuWidth = math.max(menuWidth, label.TextBounds.X)
+			end
+		end
+
+		ContextMenu.Container.Size = UDim2.fromOffset(
+			menuWidth + 8,
+			ContextMenu.Inner.Layout.AbsoluteContentSize.Y + 4
+		)
+	end
+
+	local _visible = false;
+	--DisplayFrame:GetPropertyChangedSignal('AbsolutePosition'):Connect(updateMenuPosition)
+	--ContextMenu.Inner.Layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(updateMenuSize);
+
+	(hitbox or DisplayFrame).InputBegan:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+			return ContextMenu:Hide();
+		elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
+			return ContextMenu:Show();
+		end
+	end);
+
+	Library:BindToInput(Enum.UserInputType.MouseButton1, function()
+		if _visible and not Library:IsMouseOverFrame(ContextMenu.Container) then
+			ContextMenu:Hide()
+		end;
+	end);
+	Library:BindToInput(Enum.UserInputType.MouseButton2, function()
+		if _visible and not Library:IsMouseOverFrame(ContextMenu.Container) and not Library:IsMouseOverFrame(DisplayFrame) then
+			ContextMenu:Hide()
+		end;
+	end);
+	
+	task.spawn(updateMenuPosition)
+	task.spawn(updateMenuSize)
+
+	Library:AddToRegistry(ContextMenu.Inner, {
+		BackgroundColor3 = 'BackgroundColor';
+		BorderColor3 = 'OutlineColor';
+	});
+
+	function ContextMenu:Show()
+		updateMenuPosition();
+		updateMenuSize();
+		_visible = true;
+		self.Container.Visible = true
+		Library.OpenedFrames[ContextMenu.Container] = true;
+	end
+
+	function ContextMenu:Hide()
+		_visible = false;
+		self.Container.Visible = false
+		Library.OpenedFrames[ContextMenu.Container] = nil;
+	end
+
+	function ContextMenu:AddOption(Str, Callback)
+		if type(Callback) ~= 'function' then
+			Callback = function() end
+		end
+
+		local Button = Library:CreateLabel({
+			Active = false;
+			Size = UDim2.new(1, 0, 0, 15);
+			TextSize = 13;
+			Text = Str;
+			ZIndex = 16;
+			Parent = self.Inner;
+			TextXAlignment = Enum.TextXAlignment.Center,
+		});
+
+		Library:OnHighlight(Button, Button, 
+			{ TextColor3 = 'AccentColor' },
+			{ TextColor3 = 'FontColor' }
+		);
+
+		Button.InputBegan:Connect(function(Input)
+			if Input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+				return
+			end
+			Callback()
+		end)
+		return Button;
+	end
+	return ContextMenu;
+end;
+
 Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(Instance)
 	if Library.RegistryMap[Instance] then
 		Library:RemoveFromRegistry(Instance);
@@ -467,6 +613,8 @@ Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(Instance)
 end))
 
 local BaseAddons = {};
+
+
 
 do
 	local Funcs = {};
@@ -729,134 +877,34 @@ do
 			Parent = PickerFrameInner;
 		});
 
+		local ContextMenu = Library:AddContextMenu(DisplayFrame);
+		ContextMenu:AddOption('Copy color', function()
+			Library.ColorClipboard = ColorPicker.Value
+			Library:Notify('Copied color!', 2)
+		end)
 
-		local ContextMenu = {}
-		do
-			ContextMenu.Options = {}
-			ContextMenu.Container = Library:Create('Frame', {
-				BorderColor3 = Color3.new(),
-				ZIndex = 14,
-
-				Visible = false,
-				Parent = ScreenGui
-			})
-
-			ContextMenu.Inner = Library:Create('Frame', {
-				BackgroundColor3 = Library.BackgroundColor;
-				BorderColor3 = Library.OutlineColor;
-				BorderMode = Enum.BorderMode.Inset;
-				Size = UDim2.fromScale(1, 1);
-				ZIndex = 15;
-				Parent = ContextMenu.Container;
-			});
-
-			Library:Create('UIListLayout', {
-				Name = 'Layout',
-				FillDirection = Enum.FillDirection.Vertical;
-				SortOrder = Enum.SortOrder.LayoutOrder;
-				Parent = ContextMenu.Inner;
-			});
-
-			Library:Create('UIPadding', {
-				Name = 'Padding',
-				PaddingLeft = UDim.new(0, 4),
-				Parent = ContextMenu.Inner,
-			});
-
-			local function updateMenuPosition()
-				ContextMenu.Container.Position = UDim2.fromOffset(
-					(DisplayFrame.AbsolutePosition.X + DisplayFrame.AbsoluteSize.X) + 4,
-					DisplayFrame.AbsolutePosition.Y + 1
-				)
+		ContextMenu:AddOption('Paste color', function()
+			if not Library.ColorClipboard then
+				return Library:Notify('You have not copied a color!', 2)
 			end
-
-			local function updateMenuSize()
-				local menuWidth = 60
-				for i, label in next, ContextMenu.Inner:GetChildren() do
-					if label:IsA('TextLabel') then
-						menuWidth = math.max(menuWidth, label.TextBounds.X)
-					end
-				end
-
-				ContextMenu.Container.Size = UDim2.fromOffset(
-					menuWidth + 8,
-					ContextMenu.Inner.Layout.AbsoluteContentSize.Y + 4
-				)
-			end
-
-			DisplayFrame:GetPropertyChangedSignal('AbsolutePosition'):Connect(updateMenuPosition)
-			ContextMenu.Inner.Layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(updateMenuSize)
-
-			task.spawn(updateMenuPosition)
-			task.spawn(updateMenuSize)
-
-			Library:AddToRegistry(ContextMenu.Inner, {
-				BackgroundColor3 = 'BackgroundColor';
-				BorderColor3 = 'OutlineColor';
-			});
-
-			function ContextMenu:Show()
-				self.Container.Visible = true
-			end
-
-			function ContextMenu:Hide()
-				self.Container.Visible = false
-			end
-
-			function ContextMenu:AddOption(Str, Callback)
-				if type(Callback) ~= 'function' then
-					Callback = function() end
-				end
-
-				local Button = Library:CreateLabel({
-					Active = false;
-					Size = UDim2.new(1, 0, 0, 15);
-					TextSize = 13;
-					Text = Str;
-					ZIndex = 16;
-					Parent = self.Inner;
-					TextXAlignment = Enum.TextXAlignment.Left,
-				});
-
-				Library:OnHighlight(Button, Button, 
-					{ TextColor3 = 'AccentColor' },
-					{ TextColor3 = 'FontColor' }
-				);
-
-				Button.InputBegan:Connect(function(Input)
-					if Input.UserInputType ~= Enum.UserInputType.MouseButton1 then
-						return
-					end
-
-					Callback()
-				end)
-			end
-
-			ContextMenu:AddOption('Copy color', function()
-				Library.ColorClipboard = ColorPicker.Value
-				Library:Notify('Copied color!', 2)
-			end)
-
-			ContextMenu:AddOption('Paste color', function()
-				if not Library.ColorClipboard then
-					return Library:Notify('You have not copied a color!', 2)
-				end
-				ColorPicker:SetValueRGB(Library.ColorClipboard)
-			end)
+			ColorPicker:SetValueRGB(Library.ColorClipboard)
+		end)
 
 
-			ContextMenu:AddOption('Copy HEX', function()
-				pcall(setclipboard, ColorPicker.Value:ToHex())
-				Library:Notify('Copied hex code to clipboard!', 2)
-			end)
+		ContextMenu:AddOption('Copy HEX', function()
+			pcall(setclipboard, ColorPicker.Value:ToHex())
+			Library:Notify('Copied hex code to clipboard!', 2)
+		end)
 
-			ContextMenu:AddOption('Copy RGB', function()
-				pcall(setclipboard, table.concat({ math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255) }, ', '))
-				Library:Notify('Copied RGB values to clipboard!', 2)
-			end)
-
-		end
-
+		ContextMenu:AddOption('Copy RGB', function()
+			pcall(setclipboard, table.concat({ math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255) }, ', '))
+			Library:Notify('Copied RGB values to clipboard!', 2)
+		end)
+		ContextMenu:AddOption('Copy Flag', function()
+			pcall(setclipboard, ColorPicker.Idx)
+			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
+			ContextMenu:Hide();
+		end)
 		Library:AddToRegistry(PickerFrameInner, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
 		Library:AddToRegistry(Highlight, { BackgroundColor3 = 'AccentColor'; });
 		Library:AddToRegistry(SatVibMapInner, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
@@ -930,7 +978,9 @@ do
 			Func(ColorPicker.Value)
 		end;
 
+		local _visible = false;
 		function ColorPicker:Show()
+			_visible = true;
 			for Frame, Val in next, Library.OpenedFrames do
 				if Frame.Name == 'Color' then
 					Frame.Visible = false;
@@ -943,6 +993,7 @@ do
 		end;
 
 		function ColorPicker:Hide()
+			_visible = false;
 			PickerFrameOuter.Visible = false;
 			Library.OpenedFrames[PickerFrameOuter] = nil;
 		end;
@@ -1010,11 +1061,11 @@ do
 				if PickerFrameOuter.Visible then
 					ColorPicker:Hide()
 				else
-					ContextMenu:Hide()
+					--ContextMenu:Hide()
 					ColorPicker:Show()
 				end;
 			elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
-				ContextMenu:Show()
+				--ContextMenu:Show()
 				ColorPicker:Hide()
 			end
 		end);
@@ -1039,27 +1090,15 @@ do
 			end);
 		end;
 
-		Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				local AbsPos, AbsSize = PickerFrameOuter.AbsolutePosition, PickerFrameOuter.AbsoluteSize;
-
-				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
-
-					ColorPicker:Hide();
-				end;
-
-				if not Library:IsMouseOverFrame(ContextMenu.Container) then
-					ContextMenu:Hide()
-				end
+		Library:BindToInput(Enum.UserInputType.MouseButton1, function()
+			if (not _visible) then
+				return;
 			end;
-
-			if Input.UserInputType == Enum.UserInputType.MouseButton2 and ContextMenu.Container.Visible then
-				if not Library:IsMouseOverFrame(ContextMenu.Container) and not Library:IsMouseOverFrame(DisplayFrame) then
-					ContextMenu:Hide()
-				end
-			end
-		end))
+			local AbsPos, AbsSize = PickerFrameOuter.AbsolutePosition, PickerFrameOuter.AbsoluteSize;
+			if (Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y) then
+				ColorPicker:Hide();
+			end;
+		end)
 
 		ColorPicker:Display();
 		ColorPicker.DisplayFrame = DisplayFrame
@@ -1177,7 +1216,7 @@ do
 		local Modes = Info.Modes or { 'Always', 'Toggle', 'Hold' };
 		local ModeButtons = {};
 
-		for Idx, Mode in next, Modes do
+		--[[for Idx, Mode in next, Modes do
 			local ModeButton = {};
 
 			local Label = Library:CreateLabel({
@@ -1221,10 +1260,48 @@ do
 			end;
 
 			ModeButtons[Mode] = ModeButton;
+		end;]]
+
+		local contextmenu = Library:AddContextMenu(PickOuter);
+
+		local buttons = { };
+		for index, mode in Modes do
+			local button;
+			button = contextmenu:AddOption(mode, function()
+				KeyPicker.Mode = mode;
+				button.TextColor3 = Library.AccentColor;
+				for mode, _button in buttons do
+					if (_button ~= button) then
+						_button.TextColor3 = mode == KeyPicker.Mode and Library.AccentColor or Library.FontColor;
+					end;
+				end;
+				Library:AttemptSave();
+				--Library.RegistryMap[Label].Properties.TextColor3 = 'AccentColor';
+				--ModeSelectOuter.Visible = false;
+			end);
+			button:GetPropertyChangedSignal("TextColor3"):Connect(function()
+				if (mode == KeyPicker.Mode) then
+					button.TextColor3 = Library.AccentColor;
+				else
+					button.TextColor3 = Library.FontColor;
+				end;
+			end);
+			buttons[mode] = button;
 		end;
 
+		contextmenu:AddOption('Copy Flag', function()
+			pcall(setclipboard, KeyPicker.Idx)
+			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
+			contextmenu:Hide();
+		end)
+
+		for mode, button in buttons do
+			button.TextColor3 = mode == KeyPicker.Mode and Library.AccentColor or Library.FontColor;
+		end;
 		local update = function(State)
-			ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
+			local mode = KeyPicker.Mode;
+			mode = mode ~= "Always" and KeyPicker.Override and "Override" or mode;
+			ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, mode);
 
 			ContainerLabel.Visible = true;
 			ContainerLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
@@ -1265,32 +1342,49 @@ do
 			Library.KeybindFrame.Visible = Library.KeypickerListVisible and (YSize ~= 0);
 		end;
 
+		function KeyPicker:OverrideState(v)
+			self.Override = v;
+			KeyPicker:Update();
+		end;
+
+
+		local IsMouseButtonPressed, IsKeyDown = InputService.IsMouseButtonPressed, InputService.IsKeyDown;
+
+		local mb1, mb2 = Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2;
+		local enum_keycode = Enum.KeyCode;
 		function KeyPicker:GetState()
-			if KeyPicker.Mode == 'Always' then
+			local mode = KeyPicker.Mode;
+			if mode == 'Always' then
 				return true;
-			elseif KeyPicker.Mode == 'Hold' then
-				if KeyPicker.Value == 'None' then
-					return false;
-				end
+			end;
+			local Key = KeyPicker.Value;
+			if Key == 'None' then
+				return false;
+			end
 
-				local Key = KeyPicker.Value;
-
-				if Key == 'MB1' or Key == 'MB2' then
-					return Key == 'MB1' and InputService.IsMouseButtonPressed(InputService, Enum.UserInputType.MouseButton1)
-						or Key == 'MB2' and InputService.IsMouseButtonPressed(InputService, Enum.UserInputType.MouseButton2);
+			local value = nil;
+			if (mode  == 'Hold') then
+				if (Key == 'MB1' or Key == 'MB2') then
+					value = Key == 'MB1' and IsMouseButtonPressed(InputService, mb1) or Key == 'MB2' and IsMouseButtonPressed(InputService, mb2);
 				else
-					return InputService.IsKeyDown(InputService, Enum.KeyCode[KeyPicker.Value]);
+					value = IsKeyDown(InputService, enum_keycode[Key]);
 				end;
 			else
-				return KeyPicker.Toggled;
+				value = KeyPicker.Toggled;
 			end;
+			if (value and self.Override) then
+				self.Override = false;
+			end;
+			return value or self.Override;
 		end;
 
 		function KeyPicker:SetValue(Data)
 			local Key, Mode = Data[1], Data[2];
 			DisplayLabel.Text = Key;
-			KeyPicker.Value = Key;
-			ModeButtons[Mode]:Select();
+			KeyPicker.Value, KeyPicker.Mode = Key, Mode;
+			for mode, button in buttons do
+				button.TextColor3 = mode == KeyPicker.Mode and Library.AccentColor or Library.FontColor;
+			end;
 			KeyPicker:Update();
 		end;
 
@@ -1384,8 +1478,8 @@ do
 
 					Event:Disconnect();
 				end);
-			elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
-				ModeSelectOuter.Visible = true;
+				--elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
+				--ModeSelectOuter.Visible = true;
 			end;
 		end);
 
@@ -1410,16 +1504,15 @@ do
 
 				KeyPicker:Update();
 			end;
+			--if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+			--	local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
 
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
+			--	if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
+			--		or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
 
-				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
-
-					ModeSelectOuter.Visible = false;
-				end;
-			end;
+			--		ModeSelectOuter.Visible = false;
+			--	end;
+			--end;
 		end))
 
 		KeyPicker:SetupConnection(InputService.InputEnded:Connect(function(Input)
@@ -1941,6 +2034,13 @@ do
 		Box.FocusLost:Connect(Update)
 		Box.Focused:Connect(Update)
 
+		local contextmenu = Library:AddContextMenu(TextBoxOuter);
+		contextmenu:AddOption('Copy Flag', function()
+			pcall(setclipboard, Textbox.Idx);
+			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
+			contextmenu:Hide();
+		end);
+
 		Library:AddToRegistry(Box, {
 			TextColor3 = 'FontColor';
 		});
@@ -2089,6 +2189,13 @@ do
 			end;
 		end);
 
+		local contextmenu = Library:AddContextMenu(ToggleOuter, ToggleRegion);
+		contextmenu:AddOption('Copy Flag', function()
+			pcall(setclipboard, Toggle.Idx);
+			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
+			contextmenu:Hide();
+		end);
+
 		if Toggle.Risky then
 			Library:RemoveFromRegistry(ToggleLabel)
 			ToggleLabel.TextColor3 = Library.RiskColor
@@ -2118,7 +2225,7 @@ do
 		assert(Info.Min, 'AddSlider: Missing minimum value.');
 		assert(Info.Max, 'AddSlider: Missing maximum value.');
 		assert(Info.Rounding, 'AddSlider: Missing rounding value.');
-		
+
 		local Blanks = { };
 		local Slider = {
 			Value = Info.Default;
@@ -2335,6 +2442,13 @@ do
 			end;
 		end);
 
+		local contextmenu = Library:AddContextMenu(SliderInner);
+		contextmenu:AddOption('Copy Flag', function()
+			pcall(setclipboard, Slider.Idx);
+			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
+			contextmenu:Hide();
+		end);
+
 		Slider:Display();
 
 		local size = get_count();
@@ -2393,7 +2507,7 @@ do
 		if (not Info.Text) then
 			Info.Compact = true;
 		end;
-		
+
 		local Blanks = { };
 		local Dropdown = {
 			Illegal = Info.Illegal;
@@ -2719,13 +2833,16 @@ do
 			Dropdown:BuildDropdownList();
 		end;
 
+		local _visible = false;
 		function Dropdown:OpenDropdown()
+			_visible = true;
 			ListOuter.Visible = true;
 			Library.OpenedFrames[ListOuter] = true;
 			DropdownArrow.Rotation = 180;
 		end;
 
 		function Dropdown:CloseDropdown()
+			_visible = false;
 			ListOuter.Visible = false;
 			Library.OpenedFrames[ListOuter] = nil;
 			DropdownArrow.Rotation = 0;
@@ -2780,16 +2897,23 @@ do
 			end;
 		end);
 
-		InputService.InputBegan:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize;
-
-				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
-
-					Dropdown:CloseDropdown();
-				end;
+		Library:BindToInput(Enum.UserInputType.MouseButton1, function()
+			if (not _visible) then
+				return;
 			end;
+			local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize;
+			if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
+				or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+
+				Dropdown:CloseDropdown();
+			end;
+		end);
+
+		local contextmenu = Library:AddContextMenu(DropdownOuter);
+		contextmenu:AddOption('Copy Flag', function()
+			pcall(setclipboard, Dropdown.Idx);
+			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
+			contextmenu:Hide();
 		end);
 
 		Dropdown:BuildDropdownList();
@@ -2904,14 +3028,14 @@ do
 			Depbox.Dependencies = Dependencies;
 			Depbox:Update();
 		end;
-		
+
 		function Depbox:Remove()
 			Holder:Destroy();
 			table.remove(Library.DependencyBoxes, table.find(Library.DependencyBoxes, Depbox));
 			table.clear(Depbox);
 			Groupbox:Resize();
 		end;
-		
+
 		Depbox.Container = Frame;
 
 		setmetatable(Depbox, BaseGroupbox);
@@ -3031,11 +3155,11 @@ do
 		BackgroundColor3 = 'MainColor';
 		BorderColor3 = 'OutlineColor';
 	}, true);
-	
+
 	Library:AddToRegistry(KeybindOuter, {
 		BackgroundColor3 = 'MainColor';
 	}, true);
-	
+
 	local ColorFrame = Library:Create('Frame', {
 		BackgroundColor3 = Library.AccentColor;
 		BorderSizePixel = 0;
@@ -3116,7 +3240,7 @@ function Library:Notify(Text, Time)
 	local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 14);
 
 	YSize = YSize + 7
-	
+
 	local transparency = NotificationStyle.Transparency;
 
 	local NotifyOuter = Library:Create('Frame', {
@@ -3130,7 +3254,7 @@ function Library:Notify(Text, Time)
 		Parent = Library.NotificationArea;
 		Name = _char(256 - _max(1, #Text % 256)); -- so it filters by text length if thats on
 	});
-	
+
 
 	local NotifyInner = Library:Create('Frame', {
 		BackgroundColor3 = Library.MainColor;
