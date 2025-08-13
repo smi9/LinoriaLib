@@ -2856,7 +2856,11 @@ do
 		function Dropdown:SetValue(Val)
 			if Dropdown.Multi then
 				local nTable = {};
-
+				
+				if (type(Val) == "string") then
+					Val = {[Val] = true};
+				end;
+				
 				for Value, Bool in next, Val do
 					if Dropdown.Illegal or table.find(Dropdown.Values, Value) then
 						nTable[Value] = true
