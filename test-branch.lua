@@ -61,6 +61,8 @@ local Library = {
 	ScreenGui = ScreenGui;
 };
 
+local _UI_IS_VISIBLE = false;
+
 local RainbowStep = 0
 local Hue = 0
 
@@ -467,9 +469,12 @@ function Library:BindToInput(key, callback) -- adding so there isnt 869 quintill
 end;
 
 Library:GiveSignal(InputService.InputBegan:Connect(function(input, ...)
+	if (not _UI_IS_VISIBLE) then
+		return;
+	end;
 	local callbacks = _callbacks[input.KeyCode] or _callbacks[input.UserInputType];
 	if (callbacks) then
-		for _, callback in callbacks do
+		for _, callback in pairs(callbacks) do
 			task.spawn(callback, input, ...);
 		end;
 	end;
@@ -1344,9 +1349,9 @@ do
 
 		function KeyPicker:OverrideState(v)
 			self.Override = v;
+			KeyPicker.Toggled = false;
 			KeyPicker:Update();
 		end;
-
 
 		local IsMouseButtonPressed, IsKeyDown = InputService.IsMouseButtonPressed, InputService.IsKeyDown;
 
@@ -1373,7 +1378,7 @@ do
 				value = KeyPicker.Toggled;
 			end;
 			if (value and self.Override) then
-				self.Override = false;
+				KeyPicker:OverrideState(false);
 			end;
 			return value or self.Override;
 		end;
@@ -1402,6 +1407,10 @@ do
 		end
 
 		function KeyPicker:DoClick()
+			if (KeyPicker.Override) then
+				KeyPicker.Override = false;
+				KeyPicker.Toggled = false;
+			end;
 			if ParentObj.Type == 'Toggle' and KeyPicker.SyncToggleState then
 				ParentObj:SetValue(not ParentObj.Value)
 			end
@@ -1501,7 +1510,6 @@ do
 						end;
 					end;
 				end;
-
 				KeyPicker:Update();
 			end;
 			--if Input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -3349,7 +3357,7 @@ function Library:CreateWindow(...)
 		Config.Title = Arguments[1]
 		Config.AutoShow = Arguments[2] or false;
 	end
-
+	_UI_IS_VISIBLE = Config.AutoShow;
 	if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
 	if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
 	if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
@@ -3955,8 +3963,12 @@ function Library:CreateWindow(...)
 		local FadeTime = Config.MenuFadeTime;
 		Fading = true;
 		Toggled = (not Toggled);
+		_UI_IS_VISIBLE = Toggled;
+		
 		ModalElement.Modal = Toggled;
+		
 
+		
 		if Toggled then
 			-- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
 			Outer.Visible = true;
