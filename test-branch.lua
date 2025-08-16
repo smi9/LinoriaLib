@@ -612,14 +612,12 @@ function Library:AddContextMenu(DisplayFrame, hitbox)
 end;
 
 Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(Instance)
-	if Library.RegistryMap[Instance] then
+	if _UI_IS_VISIBLE and Library.RegistryMap[Instance] then
 		Library:RemoveFromRegistry(Instance);
 	end;
 end))
 
 local BaseAddons = {};
-
-
 
 do
 	local Funcs = {};
@@ -3362,7 +3360,7 @@ function Library:CreateWindow(...)
 	if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
 	if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
 	if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
-
+	
 	if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end
 	if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(550, 600) end
 
@@ -4027,45 +4025,50 @@ function Library:CreateWindow(...)
 				CursorOutline:Destroy();
 			end);
 		end;
+		
+		if (not Config.DontFade) then
+			Outer.Parent = ScreenGui;
 
-		for _, Desc in next, Outer:GetDescendants() do
-			local Properties = {};
+			for _, Desc in next, Outer:GetDescendants() do
+				local Properties = {};
 
-			if Desc:IsA('ImageLabel') then
-				table.insert(Properties, 'ImageTransparency');
-				table.insert(Properties, 'BackgroundTransparency');
-			elseif Desc:IsA('TextLabel') or Desc:IsA('TextBox') then
-				table.insert(Properties, 'TextTransparency');
-			elseif Desc:IsA('Frame') or Desc:IsA('ScrollingFrame') then
-				table.insert(Properties, 'BackgroundTransparency');
-			elseif Desc:IsA('UIStroke') then
-				table.insert(Properties, 'Transparency');
-			end;
-
-			local Cache = TransparencyCache[Desc];
-
-			if (not Cache) then
-				Cache = {};
-				TransparencyCache[Desc] = Cache;
-			end;
-
-			for _, Prop in next, Properties do
-				if not Cache[Prop] then
-					Cache[Prop] = Desc[Prop];
+				if Desc:IsA('ImageLabel') then
+					table.insert(Properties, 'ImageTransparency');
+					table.insert(Properties, 'BackgroundTransparency');
+				elseif Desc:IsA('TextLabel') or Desc:IsA('TextBox') then
+					table.insert(Properties, 'TextTransparency');
+				elseif Desc:IsA('Frame') or Desc:IsA('ScrollingFrame') then
+					table.insert(Properties, 'BackgroundTransparency');
+				elseif Desc:IsA('UIStroke') then
+					table.insert(Properties, 'Transparency');
 				end;
 
-				if Cache[Prop] == 1 then
-					continue;
+				local Cache = TransparencyCache[Desc];
+
+				if (not Cache) then
+					Cache = {};
+					TransparencyCache[Desc] = Cache;
 				end;
 
-				TweenService:Create(Desc, TweenInfo.new(FadeTime, Enum.EasingStyle.Linear), { [Prop] = Toggled and Cache[Prop] or 1 }):Play();
+				for _, Prop in next, Properties do
+					if not Cache[Prop] then
+						Cache[Prop] = Desc[Prop];
+					end;
+
+					if Cache[Prop] == 1 then
+						continue;
+					end;
+
+					TweenService:Create(Desc, TweenInfo.new(FadeTime, Enum.EasingStyle.Linear), { [Prop] = Toggled and Cache[Prop] or 1 }):Play();
+				end;
 			end;
+			task.wait(FadeTime);
 		end;
 
-		task.wait(FadeTime);
-
 		Outer.Visible = Toggled;
-
+		
+		Outer.Parent = Toggled and ScreenGui or nil;
+		
 		Fading = false;
 	end
 
