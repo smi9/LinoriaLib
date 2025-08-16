@@ -2252,7 +2252,7 @@ do
 		local Container = SliderParent and SliderParent.Outer or Groupbox.Container;
 
 		if not Info.Compact then
-			Library:CreateLabel({
+			local label = Library:CreateLabel({
 				Size = UDim2.new(1, 0, 0, 10);
 				Position = SliderParent and UDim2.new(1,4,0,-12) or UDim2.new();
 				TextSize = 14;
@@ -2262,7 +2262,7 @@ do
 				ZIndex = 5;
 				Parent = Container;
 			});
-
+			table.insert(Blanks, label);
 			table.insert(Blanks, Groupbox:AddBlank(3));
 		end;
 
@@ -2543,7 +2543,8 @@ do
 				ZIndex = 5;
 				Parent = Container;
 			});
-
+			
+			table.insert(Blanks, DropdownLabel);
 			table.insert(Blanks, Groupbox:AddBlank(3));
 		end
 
