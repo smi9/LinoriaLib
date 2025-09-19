@@ -56,7 +56,7 @@ local Library = {
 			"All"
 		};
 	]]
-
+	
 	Signals = {};
 	ScreenGui = ScreenGui;
 };
@@ -557,7 +557,7 @@ function Library:AddContextMenu(DisplayFrame, hitbox)
 			ContextMenu:Hide()
 		end;
 	end);
-	
+
 	task.spawn(updateMenuPosition)
 	task.spawn(updateMenuSize)
 
@@ -2541,7 +2541,7 @@ do
 				ZIndex = 5;
 				Parent = Container;
 			});
-			
+
 			table.insert(Blanks, DropdownLabel);
 			table.insert(Blanks, Groupbox:AddBlank(3));
 		end
@@ -2863,11 +2863,11 @@ do
 		function Dropdown:SetValue(Val)
 			if Dropdown.Multi then
 				local nTable = {};
-				
+
 				if (type(Val) == "string") then
 					Val = {[Val] = true};
 				end;
-				
+
 				for Value, Bool in next, Val do
 					if Dropdown.Illegal or table.find(Dropdown.Values, Value) then
 						nTable[Value] = true
@@ -3360,7 +3360,7 @@ function Library:CreateWindow(...)
 	if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
 	if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
 	if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
-	
+
 	if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end
 	if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(550, 600) end
 
@@ -3368,7 +3368,9 @@ function Library:CreateWindow(...)
 		Config.AnchorPoint = Vector2.new(0.5, 0.5)
 		Config.Position = UDim2.fromScale(0.5, 0.5)
 	end
-
+	
+	Library.UISize = Config.Size;
+	
 	local Window = {
 		Tabs = {};
 	};
@@ -3539,7 +3541,7 @@ function Library:CreateWindow(...)
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
 			Position = UDim2.new(0, 8 - 1, 0, 8 - 1);
-			Size = UDim2.new(0.5, -12 + 2, 0, 507 + 2);
+			Size = UDim2.new(0.5, -12 + 2, 0, Library.UISize.Height.Offset - 91);
 			CanvasSize = UDim2.new(0, 0, 0, 0);
 			BottomImage = '';
 			TopImage = '';
@@ -3552,7 +3554,7 @@ function Library:CreateWindow(...)
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
 			Position = UDim2.new(0.5, 4 + 1, 0, 8 - 1);
-			Size = UDim2.new(0.5, -12 + 2, 0, 507 + 2);
+			Size = UDim2.new(0.5, -12 + 2, 0, Library.UISize.Height.Offset - 91); --507 + 2);
 			CanvasSize = UDim2.new(0, 0, 0, 0);
 			BottomImage = '';
 			TopImage = '';
@@ -3963,11 +3965,11 @@ function Library:CreateWindow(...)
 		Fading = true;
 		Toggled = (not Toggled);
 		_UI_IS_VISIBLE = Toggled;
-		
-		ModalElement.Modal = Toggled;
-		
 
-		
+		ModalElement.Modal = Toggled;
+
+
+
 		if Toggled then
 			-- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
 			Outer.Visible = true;
@@ -4025,7 +4027,7 @@ function Library:CreateWindow(...)
 				CursorOutline:Destroy();
 			end);
 		end;
-		
+
 		if (not Config.DontFade) then
 			Outer.Parent = ScreenGui;
 
@@ -4066,9 +4068,9 @@ function Library:CreateWindow(...)
 		end;
 
 		Outer.Visible = Toggled;
-		
+
 		Outer.Parent = Toggled and ScreenGui or nil;
-		
+
 		Fading = false;
 	end
 
