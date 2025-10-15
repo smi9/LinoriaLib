@@ -56,7 +56,7 @@ local Library = {
 			"All"
 		};
 	]]
-	
+
 	Signals = {};
 	ScreenGui = ScreenGui;
 };
@@ -882,7 +882,7 @@ do
 
 		local ContextMenu = Library:AddContextMenu(DisplayFrame);
 		ContextMenu:AddOption('Copy color', function()
-			Library.ColorClipboard = ColorPicker.Value
+			Library.ColorClipboard = ColorPicker;--.Value
 			Library:Notify('Copied color!', 2)
 		end)
 
@@ -890,7 +890,7 @@ do
 			if not Library.ColorClipboard then
 				return Library:Notify('You have not copied a color!', 2)
 			end
-			ColorPicker:SetValueRGB(Library.ColorClipboard)
+			ColorPicker:SetValueRGB(Library.ColorClipboard.Value, Library.ColorClipboard.Transparency);
 		end)
 
 
@@ -3064,12 +3064,20 @@ end;
 
 -- < Create other UI elements >
 do
-	Library.NotificationArea = Library:Create('Frame', {
+	Library.NotificationAreaHolder = Library:Create('Frame', {
 		BackgroundTransparency = 1;
-		Position = UDim2.new(0, 0, 0, 40);
+		Position = UDim2.new(0, 0, 0, 39);
 		Size = UDim2.new(0, 2560, 0, 200);
 		ZIndex = 100;
 		Parent = ScreenGui;
+	});
+	
+	Library.NotificationArea = Library:Create('Frame', {
+		BackgroundTransparency = 1;
+		Position = UDim2.new(0, 0, 0, 1);
+		Size = UDim2.new(1, 0, 1, 0);
+		ZIndex = 100;
+		Parent = Library.NotificationAreaHolder;
 	});
 
 	Library:Create('UIListLayout', {
@@ -3247,40 +3255,45 @@ local NotifySettings = {
 local NotificationStyle = Library.NotificationStyle;
 
 local _char, _max = string.char, math.max;
-function Library:Notify(Text, Time)
-	local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 14);
 
-	YSize = YSize + 7
 
-	local transparency = NotificationStyle.Transparency;
+local get_notification_colors = function()
+	local callback = NotificationStyle.OverrideColor;
+	if (callback) then
+		return callback();
+	end;
+	return Library.MainColor, Library.AccentColor, Library.OutlineColor, Library.FontColor;
+end;
 
+local notification_clone;
+do
 	local NotifyOuter = Library:Create('Frame', {
-		Transparency = transparency;
-		BackgroundColor3 = Library.MainColor;
+		--Transparency = transparency;
+		--BackgroundColor3 = main;
 		BorderColor3 = Color3.new(0, 0, 0);
 		Position = UDim2.new(0, 100, 0, 10);
-		Size = UDim2.new(0, 0, 0, YSize);
+		--Size = UDim2.new(0, 0, 0, YSize);
 		ClipsDescendants = true;
 		ZIndex = 100;
-		Parent = Library.NotificationArea;
-		Name = _char(256 - _max(1, #Text % 256)); -- so it filters by text length if thats on
+		--Parent = Library.NotificationArea;
+		--Name = _char(256 - _max(1, #Text % 256)); -- so it filters by text length if thats on
 	});
 
-
 	local NotifyInner = Library:Create('Frame', {
-		BackgroundColor3 = Library.MainColor;
-		BorderColor3 = Library.OutlineColor;
+		--BackgroundColor3 = main;
+		--BorderColor3 = outline;
 		BorderMode = Enum.BorderMode.Inset;
 		Size = UDim2.new(1, 0, 1, 0);
 		ZIndex = 101;
 		Parent = NotifyOuter;
-		Transparency = transparency;
+		--Transparency = transparency;
+		Name = "inner";
 	});
-
-	Library:AddToRegistry(NotifyInner, {
-		BackgroundColor3 = 'MainColor';
-		BorderColor3 = 'OutlineColor';
-	}, true);
+	
+	--Library:AddToRegistry(NotifyInner, {
+	--	BackgroundColor3 = 'MainColor';
+	--	BorderColor3 = 'OutlineColor';
+	--}, true);
 
 	local InnerFrame = Library:Create('Frame', {
 		BackgroundColor3 = Color3.new(1, 1, 1);
@@ -3289,52 +3302,100 @@ function Library:Notify(Text, Time)
 		Size = UDim2.new(1, -2, 1, -2);
 		ZIndex = 102;
 		Parent = NotifyInner;
-		Transparency = transparency;
+		Name = "inner";
 	});
 
 	local Gradient = Library:Create('UIGradient', {
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-			ColorSequenceKeypoint.new(1, Library.MainColor),
-		});
+		--Color = ColorSequence.new({
+		--	ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+		--	ColorSequenceKeypoint.new(1, Library.MainColor),
+		--});
 		Rotation = -90;
 		Parent = InnerFrame;
 	});
+	
 
-	Library:AddToRegistry(Gradient, {
-		Color = function()
-			return ColorSequence.new({
-				ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-				ColorSequenceKeypoint.new(1, Library.MainColor),
-			});
-		end
-	});
+	
+	--Library:AddToRegistry(Gradient, {
+	--	Color = function()
+	--		return ColorSequence.new({
+	--			ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+	--			ColorSequenceKeypoint.new(1, Library.MainColor),
+	--		});
+	--	end
+	--});
 
 	local NotifyLabel = Library:CreateLabel({
 		Position = UDim2.new(0, 4, 0, 0);
 		Size = UDim2.new(1, -4, 1, 0);
-		Text = Text;
+		--Text = Text;
 		TextXAlignment = Enum.TextXAlignment.Left;
 		TextSize = 14;
 		ZIndex = 103;
+		Name = "label";
 		Parent = InnerFrame;
 	});
+	
+
 
 	local LeftColor = Library:Create('Frame', {
-		BackgroundColor3 = Library.AccentColor;
+		--BackgroundColor3 = accent;
 		BorderSizePixel = 0;
-		Position = NotifySettings.BarPosition[NotificationStyle.BarSide];
-		Size = NotifySettings.BarSize[NotificationStyle.BarSide] or UDim2.new(0, 3, 1, 2);
+		--Position = NotifySettings.BarPosition[NotificationStyle.BarSide];
+		-- = NotifySettings.BarSize[NotificationStyle.BarSide] or UDim2.new(0, 3, 1, 2);
 		ZIndex = 104;
+		Name = "bar";
 		Parent = NotifyOuter;
 	});
+	
+	--Library:AddToRegistry(LeftColor, {
+	--	BackgroundColor3 = 'AccentColor';
+	--}, true);
+	
+	notification_clone = NotifyOuter;
+end;
 
-	Library:AddToRegistry(LeftColor, {
-		BackgroundColor3 = 'AccentColor';
-	}, true);
 
+function Library:Notify(Text, Time)
+	local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 14);
+
+	YSize = YSize + 7;
+
+	local transparency = NotificationStyle.Transparency;
+	local main, accent, outline, font = get_notification_colors();
+	
+	local NotifyOuter = notification_clone:Clone();
+	NotifyOuter.BackgroundColor3 = main;
+	NotifyOuter.Name = _char(256 - _max(1, #Text % 256));
+	NotifyOuter.Size = UDim2.new(0, 0, 0, YSize);
+	NotifyOuter.Transparency = transparency;
+	
+	local NotifyInner = NotifyOuter.inner;
+	NotifyInner.BackgroundColor3 = main;
+	NotifyInner.BorderColor3 = outline;
+	NotifyInner.Transparency = transparency;
+	
+	local InnerFrame = NotifyInner.inner;
+	InnerFrame.Transparency = transparency;
+	
+	local Gradient = InnerFrame.UIGradient;
+	Gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Library:GetDarkerColor(main)),
+		ColorSequenceKeypoint.new(1, main),
+	});
+	
+	local NotifyLabel = InnerFrame.label;
+	NotifyLabel.Text = Text;
+	NotifyLabel.TextColor3 = font;
+	
+	local LeftColor = NotifyOuter.bar;
+	LeftColor.BackgroundColor3 = accent;
+	LeftColor.Size = NotifySettings.BarSize[NotificationStyle.BarSide] or UDim2.new(0, 3, 1, 2);
+	LeftColor.Position = NotifySettings.BarPosition[NotificationStyle.BarSide];
+	
+	NotifyOuter.Parent = Library.NotificationArea;
+	
 	pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 8 + 4, 0, YSize), 'Out', 'Quad', 0.4, true);
-
 	task.spawn(function()
 		wait(Time or 5);
 
@@ -3368,9 +3429,9 @@ function Library:CreateWindow(...)
 		Config.AnchorPoint = Vector2.new(0.5, 0.5)
 		Config.Position = UDim2.fromScale(0.5, 0.5)
 	end
-	
+
 	Library.UISize = Config.Size;
-	
+
 	local Window = {
 		Tabs = {};
 	};
