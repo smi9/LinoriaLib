@@ -1,7 +1,3 @@
-if (Library and Library.ScreenGui) then
-	getgenv().Library = Library.ScreenGui:Destroy();	
-end;
-
 local InputService = game:GetService('UserInputService');
 local TextService = game:GetService('TextService');
 local CoreGui = gethui and gethui() or cloneref(game:GetService('CoreGui'));
