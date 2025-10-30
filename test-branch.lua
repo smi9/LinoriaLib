@@ -1,3 +1,7 @@
+if (Library and Library.ScreenGui) then
+	getgenv().Library = Library.ScreenGui:Destroy();	
+end;
+
 local InputService = game:GetService('UserInputService');
 local TextService = game:GetService('TextService');
 local CoreGui = gethui and gethui() or cloneref(game:GetService('CoreGui'));
@@ -570,6 +574,14 @@ function Library:AddContextMenu(DisplayFrame, hitbox)
 		updateMenuPosition();
 		updateMenuSize();
 		_visible = true;
+		
+		for Frame, Val in next, Library.OpenedFrames do
+			if Frame.Name == 'Color' then
+				Frame.Visible = false;
+				Library.OpenedFrames[Frame] = nil;
+			end;
+		end;
+		
 		self.Container.Visible = true
 		Library.OpenedFrames[ContextMenu.Container] = true;
 	end
@@ -577,6 +589,7 @@ function Library:AddContextMenu(DisplayFrame, hitbox)
 	function ContextMenu:Hide()
 		_visible = false;
 		self.Container.Visible = false
+		task.wait();
 		Library.OpenedFrames[ContextMenu.Container] = nil;
 	end
 
@@ -623,6 +636,7 @@ do
 	local Funcs = {};
 
 	function Funcs:AddColorPicker(Idx, Info)
+		local ToggleParent = self;
 		local ToggleLabel = self.TextLabel;
 		-- local Container = self.Container;
 
@@ -635,6 +649,7 @@ do
 			Title = type(Info.Title) == 'string' and Info.Title or 'Color picker',
 			HasTransparency = not not Info.Transparency;
 			Callback = Info.Callback or function(Color) end;
+			Parent = ToggleParent;
 			Idx = Idx;
 		};
 
@@ -881,9 +896,45 @@ do
 		});
 
 		local ContextMenu = Library:AddContextMenu(DisplayFrame);
+		ContextMenu:AddOption('Make gradient', function()
+			local colorpickers = { };
+			for _, addon in ToggleParent.Addons do
+				if (addon.Type == "ColorPicker") then
+					table.insert(colorpickers, addon);
+				end;
+			end;
+			if (#colorpickers < 3) then
+				ContextMenu:Hide();
+				return Library:Notify('not enough colors for a gradient.', 2);
+			end;
+			
+			local start, finish = colorpickers[1].Value, colorpickers[#colorpickers].Value;
+			
+			for i = 2, #colorpickers - 1 do
+				local addon = colorpickers[i];
+				addon:SetValueRGB(start:Lerp(finish, i/#colorpickers), addon.Transparency);
+			end;
+			
+			Library:Notify('created gradient!', 2);
+			ContextMenu:Hide();
+		end)
+		ContextMenu:AddOption('Match color', function()
+			local colorpickers = { };
+			for _, addon in ToggleParent.Addons do
+				if (addon.Type == "ColorPicker") then
+					table.insert(colorpickers, addon);
+				end;
+			end;
+			for _, addon in colorpickers do
+				addon:SetValueRGB(ColorPicker.Value, addon.Transparency);
+			end;
+			Library:Notify('matched all colors!', 2);
+			ContextMenu:Hide();
+		end)
 		ContextMenu:AddOption('Copy color', function()
 			Library.ColorClipboard = ColorPicker;--.Value
 			Library:Notify('Copied color!', 2)
+			ContextMenu:Hide();
 		end)
 
 		ContextMenu:AddOption('Paste color', function()
@@ -891,10 +942,10 @@ do
 				return Library:Notify('You have not copied a color!', 2)
 			end
 			ColorPicker:SetValueRGB(Library.ColorClipboard.Value, Library.ColorClipboard.Transparency);
+			ContextMenu:Hide();
 		end)
 
-
-		ContextMenu:AddOption('Copy HEX', function()
+		--[[ContextMenu:AddOption('Copy HEX', function()
 			pcall(setclipboard, ColorPicker.Value:ToHex())
 			Library:Notify('Copied hex code to clipboard!', 2)
 		end)
@@ -902,12 +953,12 @@ do
 		ContextMenu:AddOption('Copy RGB', function()
 			pcall(setclipboard, table.concat({ math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255) }, ', '))
 			Library:Notify('Copied RGB values to clipboard!', 2)
-		end)
+		end)]]
 		ContextMenu:AddOption('Copy Flag', function()
 			pcall(setclipboard, ColorPicker.Idx)
 			task.wait(); Library:Notify('Copied flag to clipboard!', 2);
 			ContextMenu:Hide();
-		end)
+		end);
 		Library:AddToRegistry(PickerFrameInner, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
 		Library:AddToRegistry(Highlight, { BackgroundColor3 = 'AccentColor'; });
 		Library:AddToRegistry(SatVibMapInner, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
@@ -1093,7 +1144,7 @@ do
 			end);
 		end;
 
-		Library:BindToInput(Enum.UserInputType.MouseButton1, function()
+		local handle = function()
 			if (not _visible) then
 				return;
 			end;
@@ -1101,12 +1152,18 @@ do
 			if (Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y) then
 				ColorPicker:Hide();
 			end;
-		end)
+		end
+		for _, key in { Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2 } do
+			Library:BindToInput(key, handle);
+		end;
 
 		ColorPicker:Display();
 		ColorPicker.DisplayFrame = DisplayFrame
 
 		Options[Idx] = ColorPicker;
+
+		self.Addons = self.Addons or { };
+		table.insert(self.Addons, ColorPicker);
 
 		if (self.ToggleRegion) then
 			self.ColorPickerCount += 1;
@@ -1781,7 +1838,7 @@ do
 			SubButton.Outer, SubButton.Inner, SubButton.Label = CreateBaseButton(SubButton)
 
 			SubButton.Outer.Position = UDim2.new(1, 3, 0, 0)
-			SubButton.Outer.Size = UDim2.fromOffset(self.Outer.AbsoluteSize.X - 2, self.Outer.AbsoluteSize.Y)
+			SubButton.Outer.Size = UDim2.fromOffset(self.Outer.AbsoluteSize.X - 3, self.Outer.AbsoluteSize.Y)
 			SubButton.Outer.Parent = self.Outer
 
 			function SubButton:AddTooltip(tooltip)
@@ -1818,6 +1875,67 @@ do
 		Groupbox:Resize();
 
 		return Button;
+	end;
+
+	function Funcs:AddFrame()
+		local Outer = Library:Create('Frame', {
+			BackgroundColor3 = Color3.new(0, 0, 0);
+			BorderColor3 = Color3.new(0, 0, 0);
+			Size = UDim2.new(1, -4, 0, 100);
+			ZIndex = 5;
+			Parent = self.Container;
+		});
+
+		local Inner = Library:Create('Frame', {
+			BackgroundColor3 = Library.MainColor;
+			BorderColor3 = Library.OutlineColor;
+			BorderMode = Enum.BorderMode.Inset;
+			Size = UDim2.new(1, 0, 1, 0);
+			ZIndex = 6;
+			Parent = Outer;
+		});
+
+		Library:Create('UIGradient', {
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(212, 212, 212))
+			});
+			Rotation = 90;
+			Parent = Inner;
+		});
+
+		Library:AddToRegistry(Outer, {
+			BorderColor3 = 'Black';
+		});
+
+		Library:AddToRegistry(Inner, {
+			BackgroundColor3 = 'MainColor';
+			BorderColor3 = 'OutlineColor';
+		});
+
+		Library:OnHighlight(Outer, Outer,
+			{ BorderColor3 = 'AccentColor' },
+			{ BorderColor3 = 'Black' }
+		);
+
+		local Frame = { };
+		function Frame:SetSize(y)
+			Outer.Size = UDim2.new(1, -4, 0, y);
+		end;
+		function Frame:GetOuter()
+			return Outer;
+		end;
+		function Frame:GetInner()
+			return Inner;
+		end;
+		function Frame:GetSize()
+			return Inner.AbsoluteSize;
+		end;
+
+		local Blanks = { };
+		table.insert(Blanks, self:AddBlank(5));
+		self:Resize();
+		return Frame;
 	end;
 
 	function Funcs:AddDivider()
@@ -2241,6 +2359,7 @@ do
 			MaxSize = 232;--SliderParent and 232/2 - 3 or 232;
 			Type = 'Slider';
 			Callback = Info.Callback or function(Value) end;
+			Increment = Info.Increment;
 			Idx = Idx;
 		};
 
@@ -2375,10 +2494,11 @@ do
 		end;
 
 		local function Round(Value)
-			if Slider.Rounding == 0 then
+			if (Slider.Increment) then
+				return math.round(Value / Slider.Increment) * Slider.Increment;
+			elseif Slider.Rounding == 0 then
 				return math.floor(Value);
 			end;
-
 
 			return tonumber(string.format('%.' .. Slider.Rounding .. 'f', Value))
 		end;
@@ -3071,7 +3191,7 @@ do
 		ZIndex = 100;
 		Parent = ScreenGui;
 	});
-	
+
 	Library.NotificationArea = Library:Create('Frame', {
 		BackgroundTransparency = 1;
 		Position = UDim2.new(0, 0, 0, 1);
@@ -3289,7 +3409,7 @@ do
 		--Transparency = transparency;
 		Name = "inner";
 	});
-	
+
 	--Library:AddToRegistry(NotifyInner, {
 	--	BackgroundColor3 = 'MainColor';
 	--	BorderColor3 = 'OutlineColor';
@@ -3313,9 +3433,9 @@ do
 		Rotation = -90;
 		Parent = InnerFrame;
 	});
-	
 
-	
+
+
 	--Library:AddToRegistry(Gradient, {
 	--	Color = function()
 	--		return ColorSequence.new({
@@ -3335,7 +3455,7 @@ do
 		Name = "label";
 		Parent = InnerFrame;
 	});
-	
+
 
 
 	local LeftColor = Library:Create('Frame', {
@@ -3347,15 +3467,176 @@ do
 		Name = "bar";
 		Parent = NotifyOuter;
 	});
-	
+
 	--Library:AddToRegistry(LeftColor, {
 	--	BackgroundColor3 = 'AccentColor';
 	--}, true);
-	
+
 	notification_clone = NotifyOuter;
 end;
 
 
+function Library:CreatePopout(Config)
+	if type(Config.Title) ~= 'string' then Config.Title = 'No title' end;
+
+	if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end;
+
+
+	--if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(550, 600) end;
+
+	if Config.Center then
+		Config.AnchorPoint = Vector2.new(0.5, 0.5);
+		Config.Position = UDim2.fromScale(0.5, 0.5);
+	end;
+
+	local Window = { };
+
+	local Outer = Library:Create('Frame', {
+		AnchorPoint = Config.AnchorPoint,
+		BackgroundColor3 = Color3.new(0, 0, 0);
+		BorderSizePixel = 0;
+		Position = Config.Position,
+		Size = UDim2.fromOffset(Config.Size.X, Config.Size.Y),
+		Visible = Config.AutoShow;
+		ZIndex = 1;
+		Parent = ScreenGui;
+	});
+
+	Library:MakeDraggableOutline(Outer, 25);
+
+	local Inner = Library:Create('Frame', {
+		BackgroundColor3 = Library.MainColor;
+		BorderColor3 = Library.AccentColor;
+		BorderMode = Enum.BorderMode.Inset;
+		Position = UDim2.new(0, 1, 0, 1);
+		Size = UDim2.new(1, -2, 1, -2);
+		ZIndex = 1;
+		Parent = Outer;
+	});
+
+	Library:AddToRegistry(Inner, {
+		BackgroundColor3 = 'MainColor';
+		BorderColor3 = 'AccentColor';
+	});
+
+	local WindowLabel = Library:CreateLabel({
+		Position = UDim2.new(0, 0, 0, 0);
+		Size = UDim2.new(1, 0, 0, 25);
+		Text = Config.Title or '';
+		TextXAlignment = Enum.TextXAlignment.Center;
+		ZIndex = 1;
+		Parent = Inner;
+	});
+
+	local VersionLabel = Library:CreateLabel({
+		Position = UDim2.new(0, -8, 0, 0);
+		Size = UDim2.new(1, 0, 0, 25);
+		Text = Config.Version or '';
+		RichText = true;
+		TextXAlignment = Enum.TextXAlignment.Right;
+		ZIndex = 1;
+		Parent = Inner;
+	});
+
+	local MainSectionOuter = Library:Create('Frame', {
+		BackgroundColor3 = Library.BackgroundColor;
+		BorderColor3 = Library.OutlineColor;
+		Position = UDim2.new(0, 8, 0, 25);
+		Size = UDim2.new(1, -16, 1, -33);
+		ZIndex = 1;
+		Parent = Inner;
+	});
+
+	Library:AddToRegistry(MainSectionOuter, {
+		BackgroundColor3 = 'BackgroundColor';
+		BorderColor3 = 'OutlineColor';
+	});
+
+	local MainSectionInner = Library:Create('Frame', {
+		BackgroundColor3 = Library.BackgroundColor;
+		BorderColor3 = Color3.new(0, 0, 0);
+		BorderMode = Enum.BorderMode.Inset;
+		Position = UDim2.new(0, 0, 0, 0);
+		Size = UDim2.new(1, 0, 1, 0);
+		ZIndex = 1;
+		Parent = MainSectionOuter;
+	});
+
+	Library:AddToRegistry(MainSectionInner, {
+		BackgroundColor3 = 'BackgroundColor';
+	});
+
+	local BackgroundFrame = Library:Create('Frame', {
+		BackgroundColor3 = Library.BackgroundColor;--MainColor;
+		BorderColor3 = Library.OutlineColor;
+		Position = UDim2.new(0, 8, 0, 8);
+		Size = UDim2.new(1, -16, 1, -16);
+		ZIndex = 2;
+		Visible = true;
+		Parent = MainSectionInner;
+	});
+
+	local TabContainer = Library:Create("Frame", {
+		BackgroundTransparency = 1;
+		Parent = BackgroundFrame;
+		Size = UDim2.fromScale(1, 1);
+		Position = UDim2.fromOffset(2, 2);
+	});
+
+	Library:Create('UIListLayout', {
+		Padding = UDim.new(0, 0);
+		FillDirection = Enum.FillDirection.Vertical;
+		SortOrder = Enum.SortOrder.LayoutOrder;
+		HorizontalAlignment = Enum.HorizontalAlignment.Left;
+		Parent = TabContainer;
+	});
+
+	Library:AddToRegistry(BackgroundFrame, {
+		BackgroundColor3 = 'BackgroundColor';
+		BorderColor3 = 'OutlineColor';
+	});
+
+	Library:AddToRegistry(TabContainer, {
+		BackgroundColor3 = 'MainColor';
+		BorderColor3 = 'OutlineColor';
+	});
+
+	Window.Holder = Outer;
+	Window.Container = TabContainer;
+
+	function Window:Resize()
+		local Size = 0;
+
+		for _, Element in next, TabContainer:GetChildren() do
+			if (not Element:IsA('UIListLayout')) and Element.Visible then
+				Size += Element.AbsoluteSize.Y;
+			end;
+		end;
+		Outer.Size = UDim2.fromOffset(Config.Size.X, 16 + Size + (TabContainer.AbsolutePosition.Y - Outer.AbsolutePosition.Y));--(1, 0, 0, 20 + Size + 2 + 2);
+	end;
+
+	function Window:Toggle()
+		Outer.Visible = not Outer.Visible;
+	end;
+
+	function Window:GetSize()
+		return TabContainer.AbsoluteSize;
+	end;
+
+	TabContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		task.wait();
+		Window:Resize();
+	end);
+
+	Window:Resize();
+
+	setmetatable(Window, BaseGroupbox);
+
+	return Window;
+end;
+
+
+local udim2_new, colorsequence_new, colorsequencekeypoint_new = UDim2.new, ColorSequence.new, ColorSequenceKeypoint.new;
 function Library:Notify(Text, Time)
 	local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 14);
 
@@ -3363,38 +3644,38 @@ function Library:Notify(Text, Time)
 
 	local transparency = NotificationStyle.Transparency;
 	local main, accent, outline, font = get_notification_colors();
-	
+
 	local NotifyOuter = notification_clone:Clone();
 	NotifyOuter.BackgroundColor3 = main;
 	NotifyOuter.Name = _char(256 - _max(1, #Text % 256));
-	NotifyOuter.Size = UDim2.new(0, 0, 0, YSize);
+	NotifyOuter.Size = udim2_new(0, 0, 0, YSize);
 	NotifyOuter.Transparency = transparency;
-	
+
 	local NotifyInner = NotifyOuter.inner;
 	NotifyInner.BackgroundColor3 = main;
 	NotifyInner.BorderColor3 = outline;
 	NotifyInner.Transparency = transparency;
-	
+
 	local InnerFrame = NotifyInner.inner;
 	InnerFrame.Transparency = transparency;
-	
+
 	local Gradient = InnerFrame.UIGradient;
-	Gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Library:GetDarkerColor(main)),
-		ColorSequenceKeypoint.new(1, main),
+	Gradient.Color = colorsequence_new({
+		colorsequencekeypoint_new(0, Library:GetDarkerColor(main)),
+		colorsequencekeypoint_new(1, main),
 	});
-	
+
 	local NotifyLabel = InnerFrame.label;
 	NotifyLabel.Text = Text;
 	NotifyLabel.TextColor3 = font;
-	
+
 	local LeftColor = NotifyOuter.bar;
 	LeftColor.BackgroundColor3 = accent;
-	LeftColor.Size = NotifySettings.BarSize[NotificationStyle.BarSide] or UDim2.new(0, 3, 1, 2);
+	LeftColor.Size = NotifySettings.BarSize[NotificationStyle.BarSide] or udim2_new(0, 3, 1, 2);
 	LeftColor.Position = NotifySettings.BarPosition[NotificationStyle.BarSide];
-	
+
 	NotifyOuter.Parent = Library.NotificationArea;
-	
+
 	pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 8 + 4, 0, YSize), 'Out', 'Quad', 0.4, true);
 	task.spawn(function()
 		wait(Time or 5);
