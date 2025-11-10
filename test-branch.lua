@@ -1,3 +1,7 @@
+if (Library and Library.ScreenGui) then
+	getgenv().Library = Library.ScreenGui:Destroy();	
+end;
+
 local InputService = game:GetService('UserInputService');
 local TextService = game:GetService('TextService');
 local CoreGui = gethui and gethui() or cloneref(game:GetService('CoreGui'));
@@ -56,7 +60,8 @@ local Library = {
 			"All"
 		};
 	]]
-
+	
+	Events = {};
 	Signals = {};
 	ScreenGui = ScreenGui;
 };
@@ -457,6 +462,18 @@ function Library:Unload()
 
 	ScreenGui:Destroy()
 end
+
+function Library:CreateEvent(name)
+	self.Events[name] = Instance.new("BindableEvent");
+end;
+
+function Library:FireEvent(name, ...)
+	self.Events[name]:Fire(...);
+end;
+
+function Library:OnEvent(name)
+	return self.Events[name].Event;
+end;
 
 function Library:OnUnload(Callback)
 	Library.OnUnload = Callback
@@ -1399,6 +1416,9 @@ do
 		end;
 
 		function KeyPicker:OverrideState(v)
+			if (self.Override == v) then
+				return; -- linoria explodes fps because of :Update() so dont reupdate if you dont have too.....
+			end;
 			self.Override = v;
 			KeyPicker.Toggled = false;
 			KeyPicker:Update();
@@ -3684,6 +3704,12 @@ function Library:Notify(Text, Time)
 	end);
 end;
 
+function Library:IsVisible()
+	return _UI_IS_VISIBLE;
+end;
+
+Library:CreateEvent("VisibilityChanged");
+
 function Library:CreateWindow(...)
 	local Arguments = { ... }
 	local Config = { AnchorPoint = Vector2.zero }
@@ -4119,7 +4145,7 @@ function Library:CreateWindow(...)
 			end;
 
 			function Tabbox:AddTab(Name)
-				local Tab = {};
+				local TabInstance = {};
 
 				local Button = Library:Create('Frame', {
 					BackgroundColor3 = Library.MainColor;
@@ -4171,7 +4197,7 @@ function Library:CreateWindow(...)
 					Parent = Container;
 				});
 
-				function Tab:Show()
+				function TabInstance:Show()
 					for _, Tab in next, Tabbox.Tabs do
 						Tab:Hide();
 					end;
@@ -4182,10 +4208,10 @@ function Library:CreateWindow(...)
 					Button.BackgroundColor3 = Library.BackgroundColor;
 					Library.RegistryMap[Button].Properties.BackgroundColor3 = 'BackgroundColor';
 
-					Tab:Resize();
+					TabInstance:Resize();
 				end;
 
-				function Tab:Hide()
+				function TabInstance:Hide()
 					Container.Visible = false;
 					Block.Visible = false;
 
@@ -4193,7 +4219,7 @@ function Library:CreateWindow(...)
 					Library.RegistryMap[Button].Properties.BackgroundColor3 = 'MainColor';
 				end;
 
-				function Tab:Resize()
+				function TabInstance:Resize()
 					local TabCount = 0;
 
 					for _, Tab in next, Tabbox.Tabs do
@@ -4212,7 +4238,7 @@ function Library:CreateWindow(...)
 
 					local Size = 0;
 
-					for _, Element in next, Tab.Container:GetChildren() do
+					for _, Element in next, TabInstance.Container:GetChildren() do
 						if (not Element:IsA('UIListLayout')) and Element.Visible then
 							Size = Size + Element.Size.Y.Offset;
 						end;
@@ -4223,25 +4249,27 @@ function Library:CreateWindow(...)
 
 				Button.InputBegan:Connect(function(Input)
 					if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
-						Tab:Show();
-						Tab:Resize();
+						TabInstance:Show();
+						TabInstance:Resize();
 					end;
 				end);
 
-				Tab.Container = Container;
-				Tabbox.Tabs[Name] = Tab;
+				TabInstance.Container = Container;
+				Tabbox.Tabs[Name] = TabInstance;
 
-				setmetatable(Tab, BaseGroupbox);
+				setmetatable(TabInstance, BaseGroupbox);
 
-				Tab:AddBlank(3);
-				Tab:Resize();
+				TabInstance:AddBlank(3);
+				TabInstance:Resize();
 
 				-- Show first tab (number is 2 cus of the UIListLayout that also sits in that instance)
 				if #TabboxButtons:GetChildren() == 2 then
-					Tab:Show();
+					TabInstance:Show();
 				end;
-
-				return Tab;
+				
+				Tab.Groupboxes[Name] = TabInstance;
+				
+				return TabInstance;
 			end;
 
 			Tabboxes[Info.Name or ''] = Tabbox;
@@ -4303,11 +4331,9 @@ function Library:CreateWindow(...)
 		Fading = true;
 		Toggled = (not Toggled);
 		_UI_IS_VISIBLE = Toggled;
-
+		Library:FireEvent("VisibilityChanged", _UI_IS_VISIBLE);
 		ModalElement.Modal = Toggled;
-
-
-
+		
 		if Toggled then
 			-- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
 			Outer.Visible = true;
