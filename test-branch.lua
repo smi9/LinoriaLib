@@ -1,3 +1,5 @@
+repeat task.wait(0.5); until game:IsLoaded()
+task.wait(.5);
 if (Library and Library.ScreenGui) then
 	getgenv().Library = Library.ScreenGui:Destroy();	
 end;
@@ -2013,7 +2015,7 @@ do
 			Size = UDim2.new(1, 0, 0, 15);
 			TextSize = 14;
 			Text = Info.Text;
-			TextXAlignment = Enum.TextXAlignment.Center;
+			TextXAlignment = Enum.TextXAlignment[Info.Center and "Center" or "Left"];
 			ZIndex = 5;
 			Parent = Container;
 		});
