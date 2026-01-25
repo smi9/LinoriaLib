@@ -1,3 +1,5 @@
+repeat task.wait(0.5); until game:IsLoaded()
+task.wait(.5);
 if (Library and Library.ScreenGui) then
 	getgenv().Library = Library.ScreenGui:Destroy();	
 end;
@@ -60,7 +62,7 @@ local Library = {
 			"All"
 		};
 	]]
-	
+
 	Events = {};
 	Signals = {};
 	ScreenGui = ScreenGui;
@@ -587,14 +589,14 @@ function Library:AddContextMenu(DisplayFrame, hitbox)
 		updateMenuPosition();
 		updateMenuSize();
 		_visible = true;
-		
+
 		for Frame, Val in next, Library.OpenedFrames do
 			if Frame.Name == 'Color' then
 				Frame.Visible = false;
 				Library.OpenedFrames[Frame] = nil;
 			end;
 		end;
-		
+
 		self.Container.Visible = true
 		Library.OpenedFrames[ContextMenu.Container] = true;
 	end
@@ -920,14 +922,14 @@ do
 				ContextMenu:Hide();
 				return Library:Notify('not enough colors for a gradient.', 2);
 			end;
-			
+
 			local start, finish = colorpickers[1].Value, colorpickers[#colorpickers].Value;
-			
+
 			for i = 2, #colorpickers - 1 do
 				local addon = colorpickers[i];
 				addon:SetValueRGB(start:Lerp(finish, i/#colorpickers), addon.Transparency);
 			end;
-			
+
 			Library:Notify('created gradient!', 2);
 			ContextMenu:Hide();
 		end)
@@ -2013,7 +2015,7 @@ do
 			Size = UDim2.new(1, 0, 0, 15);
 			TextSize = 14;
 			Text = Info.Text;
-			TextXAlignment = Enum.TextXAlignment.Left;
+			TextXAlignment = Enum.TextXAlignment.Center;
 			ZIndex = 5;
 			Parent = Container;
 		});
@@ -2075,7 +2077,7 @@ do
 			BackgroundTransparency = 1;
 
 			Position = UDim2.fromOffset(0, 0),
-			Size = UDim2.fromScale(5, 1),
+			Size = UDim2.fromScale(1, 1),
 
 			Font = Library.Font;
 			PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
@@ -2086,7 +2088,7 @@ do
 			TextColor3 = Library.FontColor;
 			TextSize = 14;
 			TextStrokeTransparency = 0;
-			TextXAlignment = Enum.TextXAlignment.Left;
+			TextXAlignment = Enum.TextXAlignment[Info.Center and "Center" or "Left"];
 
 			ZIndex = 7;
 			Parent = Container;
@@ -3177,9 +3179,9 @@ do
 		end;
 
 		function Depbox:Remove()
-			Holder:Destroy();
 			table.remove(Library.DependencyBoxes, table.find(Library.DependencyBoxes, Depbox));
 			table.clear(Depbox);
+			Holder:Destroy();
 			Groupbox:Resize();
 		end;
 
@@ -4266,9 +4268,9 @@ function Library:CreateWindow(...)
 				if #TabboxButtons:GetChildren() == 2 then
 					TabInstance:Show();
 				end;
-				
+
 				Tab.Groupboxes[Name] = TabInstance;
-				
+
 				return TabInstance;
 			end;
 
@@ -4333,7 +4335,7 @@ function Library:CreateWindow(...)
 		_UI_IS_VISIBLE = Toggled;
 		Library:FireEvent("VisibilityChanged", _UI_IS_VISIBLE);
 		ModalElement.Modal = Toggled;
-		
+
 		if Toggled then
 			-- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
 			Outer.Visible = true;
