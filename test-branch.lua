@@ -1,5 +1,3 @@
-repeat task.wait(0.5); until game:IsLoaded()
-task.wait(.5);
 if (Library and Library.ScreenGui) then
 	getgenv().Library = Library.ScreenGui:Destroy();	
 end;
