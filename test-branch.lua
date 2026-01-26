@@ -3497,7 +3497,13 @@ function Library:CreatePopout(Config)
 
 	if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end;
 
+	local ScreenGui = Instance.new('ScreenGui');
+	ProtectGui(ScreenGui);
 
+	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+	ScreenGui.Parent = CoreGui;
+	ScreenGui.DisplayOrder = (Config.ZIndex or 0) + 19; -- fix clipping with ui
+	
 	--if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(550, 600) end;
 
 	if Config.Center then
@@ -3643,7 +3649,7 @@ function Library:CreatePopout(Config)
 		task.wait();
 		Window:Resize();
 	end);
-
+	
 	Window:Resize();
 
 	setmetatable(Window, BaseGroupbox);
