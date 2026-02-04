@@ -1192,12 +1192,17 @@ do
 		local ToggleLabel = self.TextLabel;
 		local Container = self.Container;
 
-		assert(Info.Default, 'AddKeyPicker: Missing default value.');
-
+		--assert(Info.Default, 'AddKeyPicker: Missing default value.');
+		Info.Default = Info.Default or "...";
+		Info.Mode = Info.Mode or "Always"; -- normal default is toggle
+		if (Info.Modes and not table.find(Info.Modes, Info.Mode)) then
+			Info.Mode = Info.Modes[1] or "Toggle"; -- ??
+		end;
+		
 		local KeyPicker = {
 			Value = Info.Default;
 			Toggled = false;
-			Mode = Info.Mode or 'Toggle'; -- Always, Toggle, Hold
+			Mode = Info.Mode; -- Always, Toggle, Hold
 			Type = 'KeyPicker';
 			Callback = Info.Callback or function(Value) end;
 			ChangedCallback = Info.ChangedCallback or function(New) end;
@@ -1434,9 +1439,9 @@ do
 				return true;
 			end;
 			local Key = KeyPicker.Value;
-			if Key == 'None' then
+			if (Key == '...') then
 				return false;
-			end
+			end;
 
 			local value = nil;
 			if (mode  == 'Hold') then
@@ -1508,7 +1513,11 @@ do
 		end;
 
 		local Picking = false;
-
+		
+		local unbind_keys = { 
+			[Enum.KeyCode.Escape] = true;
+			[Enum.KeyCode.Backspace] = true;
+		};
 		PickOuter.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
 				Picking = true;
@@ -1532,13 +1541,13 @@ do
 				end);
 
 				wait(0.2);
-
+				
 				local Event;
 				Event = InputService.InputBegan:Connect(function(Input)
 					local Key;
 
 					if Input.UserInputType == Enum.UserInputType.Keyboard then
-						Key = Input.KeyCode == Enum.KeyCode.Escape and "..." or Input.KeyCode.Name;
+						Key = unbind_keys[Input.KeyCode] and "..." or Input.KeyCode.Name;
 					elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
 						Key = 'MB1';
 					elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
